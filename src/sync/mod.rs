@@ -3,7 +3,7 @@ extern crate rustc_serialize;
 extern crate log;
 extern crate ansi_term;
 
-use self::ansi_term::Color::{Green,Red};
+use self::ansi_term::Color::Green;
 
 use self::hyper::client::Client;
 use self::hyper::header::UserAgent;
@@ -17,33 +17,7 @@ use std::fs::{File,read_dir,create_dir};
 use std::path::Path;
 
 use ::db::Db;
-
-use log::{LogRecord, LogLevel, LogMetadata, LogLevelFilter, SetLoggerError};
-
-struct SyncLogger;
-
-impl ::log::Log for SyncLogger {
-    fn enabled(&self, _: &LogMetadata) -> bool { true }
-
-    fn log(&self, record: &LogRecord) {
-        if self.enabled(record.metadata()) {
-            match record.level() {
-                LogLevel::Info  => println!(r"[{}] {}", Green.paint("INFO"), record.args()),
-                LogLevel::Error => println!(r"[{}] {}", Red.paint("ERROR"), record.args()),
-                _               => println!(r"[{}] {}", record.level(), record.args())
-            }
-        }
-    }
-}
-
-impl SyncLogger {
-    fn init() -> Result<(), SetLoggerError> {
-        log::set_logger(|max_log_level| {
-            max_log_level.set(LogLevelFilter::Info);
-            Box::new(SyncLogger)
-        })
-    }
-}
+use ::logger::ZephLogger;
 
 #[derive(Debug)]
 struct Image {
@@ -75,7 +49,7 @@ fn download(client: &Client, im: &Image) {
 }
 
 pub fn e621() {
-    SyncLogger::init().unwrap();
+    ZephLogger::init().unwrap();
 
     let db = Db::new();
     let client = Client::new();

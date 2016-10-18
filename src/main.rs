@@ -17,9 +17,11 @@ use std::collections::HashMap;
 use rustc_serialize::json;
 
 mod db;
-use db::Db;
-
+mod logger;
 mod sync;
+
+use db::Db;
+use logger::ZephLogger;
 
 fn index_n_search<'a, D>(_request: &mut Request<D>, response: Response<'a, D>) -> MiddlewareResult<'a, D> {
     response.send(include_str!("templates/index.html"))
@@ -37,10 +39,15 @@ fn upload_image<'mw>(req: &mut Request, mut res: Response<'mw>) -> MiddlewareRes
                                 let ext = Path::new(&filename).extension().unwrap().to_str().unwrap();
 
                                 if let Err(_) = read_dir("assets/images") {
+                                    error!("Images directory does not exist, creating..");
                                     create_dir("assets/images").unwrap();
                                 }
 
-                                let _ = copy(&savedfile.path,format!("assets/images/{}",db.add_image(&tags,ext).unwrap()));
+                                let name = db.add_image(&tags,ext).unwrap();
+                                match copy(&savedfile.path,format!("assets/images/{}",name)) {
+                                    Ok(_)   => info!("Saved {}", name),
+                                    Err(x)  => error!("Can't save image: {}", x)
+                                }
 
                                 res.redirect("/")
 
@@ -58,10 +65,12 @@ fn upload_image<'mw>(req: &mut Request, mut res: Response<'mw>) -> MiddlewareRes
 }
 
 fn show<'a, D>(request: &mut Request<D>, response: Response<'a, D>) -> MiddlewareResult<'a, D> {
-    let name = format!("{}.{}",
-                           request.param("name").unwrap().replace("_OPENQ_","(").replace("_CLOSEQ_",")"),
-                           request.param("ext").unwrap());
+    let name = request.param("name").unwrap().replace("_OPENQ_","(").replace("_CLOSEQ_",")");
+    let ext = request.param("ext").unwrap();
 
+    info!("Showing {}.{}", name, ext);
+
+    let name = format!("{}.{}",name, ext);
     let mut data = HashMap::new();
     let db = Db::new();
     data.insert("image", db.get_image(&name).unwrap());
@@ -71,6 +80,8 @@ fn show<'a, D>(request: &mut Request<D>, response: Response<'a, D>) -> Middlewar
 fn more<'a, D>(request: &mut Request<D>, mut response: Response<'a, D>) -> MiddlewareResult<'a, D> {
     let db = Db::new();
     let offset = request.query().get("offset").unwrap().parse::<usize>().unwrap();
+
+    info!("Requested more with offset {}", offset);
 
     let images = match request.query().get("q") {
         Some(x) =>  db.by_tags(25, offset, &x.split_whitespace().map(|x| x.to_string()).collect::<Vec<_>>()).unwrap(),
@@ -82,6 +93,9 @@ fn more<'a, D>(request: &mut Request<D>, mut response: Response<'a, D>) -> Middl
 }
 
 fn main() {
+    if std::env::args().any(|x| x == "log") {
+        ZephLogger::init().unwrap();
+    }
 
     if std::env::args().any(|x| x == "sync") {
         sync::e621();

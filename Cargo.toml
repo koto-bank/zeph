@@ -1,0 +1,14 @@
+[package]
+name = "zeph"
+version = "0.1.0"
+authors = ["TyanNN <tyannn@cocaine.ninja>"]
+
+[dependencies]
+multipart = { version = "*", features = [ "nickel_" ] }
+nickel = "*"
+lmdb-rs = "*"
+rustc-serialize = "*"
+time = "*"
+hyper = "*"
+log = "*"
+ansi_term = "*"

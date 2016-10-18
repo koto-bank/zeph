@@ -1,0 +1,82 @@
+body {
+    background: #222;
+}
+
+* {
+    color: #FFFDD0;
+}
+
+#upload-button {
+    position: fixed;
+    opacity: 0.2;
+    right: 1%;
+    bottom: 1%;
+    transition: all .1s ease-in-out;
+}
+
+#upload-button:hover {
+    opacity: 1;
+}
+
+#upload-form {
+    padding: 2%;
+    background-color: #222;
+    width: 30%;
+    position: fixed;
+    right: 5%;
+    bottom: -100%;
+    transition: all .5s ease-in-out;
+}
+
+.tags-search {
+    float: left;
+    position: fixed;
+    margin-top: 2%;
+    padding: .5%;
+    z-index: 1;
+    width: 15%;
+    height: 80%;
+}
+
+#tags {
+    height: 90%;
+    overflow-y: auto;
+}
+
+#tag-search-form {
+    margin-top: 25px;
+}
+
+#images {
+    margin-left: 15%;
+    overflow-x: auto;
+}
+
+#nano-logo {
+    border-radius: 50%;
+    width: 30%;
+    margin-right: 2%;
+}
+
+#more-button {
+    display:block;
+    width:20%;
+    margin:0 auto;
+}
+
+.thumbnail {
+    margin: .5%;
+    background-color: white;
+    width: 200px;
+    height: 300px;
+    display: inline-block; 
+    background-size: cover; 
+    background-position: center center;
+    background-repeat: no-repeat;
+}
+
+/* show */
+
+#image-block {
+    max-width: 50%;
+}

@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+
+<html>
+    <head>
+        <link rel="stylesheet" href="/css/milligram.min.css">
+        <link rel="stylesheet" href="/css/main.css">
+    </head>
+    <meta charset="utf-8">
+    <body>
+        <div style="width:100%;">
+            <div class="tags-search">
+                <a href="/" title="Boop!">
+                    <img id="nano-logo" src="/logo.jpg">
+                    <h3 style="display: inline; vertical-align: 50%">Zeph</h3>
+                </a>
+                <form id="tag-seatch-form" action="/search">
+                    <input placeholder="Search" name="q" id="tag-search-field" type="text">
+                </form>
+                <div id="tags">
+                    {{#image}}
+                    {{#tags}}
+                    <br>
+                    <a href="/search?q={{.}}">{{.}}</a>
+                    {{/tags}}
+                    {{/image}}
+                </div>
+        </div>
+        {{#image}}
+        <a href="/images/{{name}}">
+            <img src="/images/{{name}}" id="image-block" style="display: block; margin: 0 auto;"></img>
+        </a>
+        {{/image}}
+    </body>
+</html>

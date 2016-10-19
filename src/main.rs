@@ -84,7 +84,7 @@ fn more<'a, D>(request: &mut Request<D>, mut response: Response<'a, D>) -> Middl
     info!("Requested more with offset {}", offset);
 
     let images = match request.query().get("q") {
-        Some(x) =>  db.by_tags(25, offset, &x.split_whitespace().map(|x| x.to_string()).collect::<Vec<_>>()).unwrap(),
+        Some(x) =>  db.by_tags(25, offset, &x.to_lowercase().split_whitespace().map(|x| x.to_string()).collect::<Vec<_>>()).unwrap(),
         None    =>  db.get_images(25, offset).unwrap()
     };
 

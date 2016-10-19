@@ -26,6 +26,7 @@ enum AnyWith {
 enum Tag {
     Include(String),
     Exclude(String),
+    Rating(Vec<String>),
     AnyWith(AnyWith)
 }
 
@@ -109,21 +110,20 @@ impl Db {
         }))
     }
 
-    fn parse_tag(&self, tag: &str) -> Vec<Tag> {
+    fn parse_tag(&self, tag: &str) -> Tag {
         if tag.starts_with("rating") {
             let tag = tag.split("rating:").collect::<Vec<_>>()[1];
-            let ratings = tag.split(',');
-            ratings.map(|x| Tag::Include(format!("rating:{}",x))).collect::<Vec<_>>()
+            Tag::Rating(tag.split(',').map(|x| x.to_string()).collect::<Vec<_>>())
         } else if tag.starts_with('-') {
-            vec![Tag::Exclude(tag[1..].to_string())]
+            Tag::Exclude(tag[1..].to_string())
         } else if tag.starts_with('*') {
-            vec![Tag::AnyWith(AnyWith::After(tag[1..].to_string()))]
+            Tag::AnyWith(AnyWith::After(tag[1..].to_string()))
         } else if tag.ends_with("*") {
             let mut n = tag.to_string();
             n.pop();
-            vec![Tag::AnyWith(AnyWith::Before(n))]
+            Tag::AnyWith(AnyWith::Before(n))
         } else {
-            vec![Tag::Include(tag.to_string())]
+            Tag::Include(tag.to_string())
         }
     }
 
@@ -131,7 +131,6 @@ impl Db {
         let tags = tags.iter().map(|x| self.parse_tag(x)).collect::<Vec<_>>();
         let needed_len = tags
             .iter()
-            .flat_map(|x| x)
             .filter(|x| match **x { Tag::Exclude(_) => false, _ => true })
             .collect::<Vec<_>>()
             .len();
@@ -150,14 +149,18 @@ impl Db {
 
             let mut is_all_tags = Some(0);
             'up: for x_tag in &x_tags {
-                for tag in &tags.iter().flat_map(|x| x).collect::<Vec<_>>() {
-                    match **tag {
-                        Tag::Include(ref incl)  => if incl == x_tag { is_all_tags = is_all_tags.map(|x| x + 1 ) },
-                        Tag::Exclude(ref excl)  => if excl == x_tag { is_all_tags = None; break 'up },
-                        Tag::AnyWith(ref x)    => match *x {
+                for tag in &tags {
+                    match *tag {
+                        Tag::Include(ref incl) => if incl == x_tag { is_all_tags = is_all_tags.map(|x| x + 1 ) },
+                        Tag::Exclude(ref excl) => if excl == x_tag { is_all_tags = None; break 'up },
+                        Tag::AnyWith(ref x) => match *x {
                             AnyWith::Before(ref bef)    => if x_tag.starts_with(bef) { is_all_tags = is_all_tags.map(|x| x + 1 ) },
                             AnyWith::After(ref aft)        => if x_tag.ends_with(aft) { is_all_tags = is_all_tags.map(|x| x + 1 ) }
-                        }
+                        },
+                        Tag::Rating(ref r) => {
+                            for tg in r {
+                                if format!("rating:{}", tg) == *x_tag { is_all_tags = is_all_tags.map(|x| x + 1 ) }
+                            }}
                     }
                 }
             }

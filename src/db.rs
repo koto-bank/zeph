@@ -52,7 +52,7 @@ impl Db {
     }
 
     pub fn add_with_tags_name(&self, tags: &[String], ext: &str) -> SQLResult<String> {
-        let mut name = tags.join("_");
+        let mut name = tags.join("_").replace("'","''");
         name.push_str(ext);
         try!(self.add_image(&name, tags, None, None, None));
         Ok(name)
@@ -62,7 +62,7 @@ impl Db {
     T2: Into<Option<&'a str>>,
     C: Into<Option<char>>>(&self, name: &str, tags: &[String], got_from: T1, original_link: T2, rating: C) -> SQLResult<()> {
         let mut fields = "INSERT INTO images (name, tags".to_string();
-        let mut values = format!("VALUES('{}', '{}'", name, format!(",{},",tags.join(",")));
+        let mut values = format!("VALUES('{}', '{}'", name, format!(",{},",tags.join(",").replace("'","''")));
         if let Some(x) = got_from.into() {
             fields.push_str(", got_from");
             values.push_str(&format!(", '{}'", x));
@@ -142,17 +142,15 @@ impl Db {
     }
 
     pub fn by_tags<T: Into<Option<i32>>>(&self, take: T, skip: usize, tags: &[String]) -> SQLResult<Vec<Image>> {
-        let mut q = String::new();
+        let tags = tags.iter().map(|x| parse_tag(&x.replace("_",r"\_").replace("%", r"\%").replace("'", "''"))).collect::<Vec<_>>();
 
-        let tags = tags.iter().map(|x| parse_tag(&x.replace("_",r"\_").replace("%", r"\%"))).collect::<Vec<_>>();
-
-        for t in tags {
-            match t {
-                Tag::Include(ref incl) => q.push_str(&format!(r"tags LIKE '%,{},%' ESCAPE '\' AND ", incl)),
-                Tag::Exclude(ref excl) => q.push_str(&format!(r"tags NOT LIKE '%,{},%' ESCAPE '\' AND ", excl)),
+        let q = tags.iter().map(|t| {
+            match *t {
+                Tag::Include(ref incl) => format!(r"tags LIKE '%,{},%' ESCAPE '\'", incl),
+                Tag::Exclude(ref excl) => format!(r"tags NOT LIKE '%,{},%' ESCAPE '\'", excl),
                 Tag::AnyWith(ref x) => match *x {
-                    AnyWith::Before(ref bef) => q.push_str(&format!(r"tags LIKE '%,{}%,%' ESCAPE '\' AND ", bef)),
-                    AnyWith::After(ref aft) => q.push_str(&format!(r"tags LIKE '%,%{},%' ESCAPE '\' AND ", aft)),
+                    AnyWith::Before(ref bef) => format!(r"tags LIKE '%,{}%,%' ESCAPE '\'", bef),
+                    AnyWith::After(ref aft) => format!(r"tags LIKE '%,%{},%' ESCAPE '\'", aft),
                 },
                 Tag::Rating(ref r) => {
                     let mut s = "(".to_string();
@@ -162,8 +160,7 @@ impl Db {
                     let _ = (0..4).inspect(|_| {s.pop(); }).collect::<Vec<_>>();
                     s.push_str(")");
 
-                    q.push_str(&s);
-                    q.push_str(" AND ");
+                    s
                 },
 
                 Tag::From(ref f) => {
@@ -174,14 +171,10 @@ impl Db {
                     let _ = (0..4).inspect(|_| {s.pop(); }).collect::<Vec<_>>();
                     s.push_str(")");
 
-                    q.push_str(&s);
-                    q.push_str(" AND ");
+                    s
                 }
             }
-        }
-
-
-        let _ = (0..4).inspect(|_| { q.pop(); }).collect::<Vec<_>>();
+        }).collect::<Vec<_>>().join(" AND ");
 
 
         let take = match take.into() {

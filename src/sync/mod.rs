@@ -88,13 +88,18 @@ pub fn e621() {
             let tags = image["tags"].as_string().unwrap().split_whitespace().map(|x| x.to_string()).collect::<Vec<_>>();
             let rating = image["rating"].as_string().unwrap().chars().nth(0).unwrap();
 
-            acc.push(Image{
-                url: image["file_url"].as_string().unwrap().to_string(),
-                tags: tags,
-                id: image["id"].as_i64().unwrap(),
-                rating: rating
-            });
-            acc
+            let ext = image["file_ext"].as_string().unwrap();
+            if ext != "webm" && ext != "swf" && ext != "mp4" {
+                acc.push(Image{
+                    url: image["file_url"].as_string().unwrap().to_string(),
+                    tags: tags,
+                    id: image["id"].as_i64().unwrap(),
+                    rating: rating
+                });
+                acc
+            } else {
+                acc
+            }
         });
 
         for im in images {

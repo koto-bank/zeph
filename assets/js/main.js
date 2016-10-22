@@ -1,8 +1,7 @@
 var LOAD_AT_A_TIME = 25;
 var TAGS_SET = false;
 
-function httpGetAsync(theUrl, callback)
-{
+function httpGetAsync(theUrl, callback) {
     var xmlHttp = new XMLHttpRequest();
     xmlHttp.onreadystatechange = function() {
         if (xmlHttp.readyState == 4 && xmlHttp.status == 200) { callback(xmlHttp.responseText); }
@@ -35,7 +34,7 @@ function loadMore() {
 
         body.forEach(function(image) {
             var link = document.createElement("a");
-            link.href = "/show/"+image.link;
+            link.href = "/show/"+image.id;
             var im = document.createElement("div");
             im.title = image.tags.join(" ");
             im.className = "thumbnail";

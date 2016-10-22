@@ -22,7 +22,9 @@ use ::logger::ZephLogger;
 #[derive(Debug)]
 struct Image {
     url: String,
-    tags: Vec<String>
+    tags: Vec<String>,
+    id: i64,
+    rating: char
 }
 
 fn download(client: &Client, im: &Image) {
@@ -37,7 +39,7 @@ fn download(client: &Client, im: &Image) {
     res.read_to_end(&mut body).unwrap();
 
     let db = Db::new();
-    db.add_image_with_name(name, &im.tags).unwrap();
+    db.add_image(name, &im.tags, "e621", &*format!("https://e621.net/post/show/{}", im.id), im.rating).unwrap();
 
     if let Err(_) = read_dir("assets/images") {
         create_dir("assets/images").unwrap();
@@ -83,15 +85,14 @@ pub fn e621() {
 
         let images = images.iter().fold(Vec::new(), |mut acc, x| {
             let image = x.as_object().unwrap();
-            let mut tags = image["tags"].as_string().unwrap().split_whitespace().map(|x| x.to_string()).collect::<Vec<_>>();
-            let rating = format!("rating:{}",image["rating"].as_string().unwrap());
-
-            tags.push("e621".to_string());
-            tags.push(rating);
+            let tags = image["tags"].as_string().unwrap().split_whitespace().map(|x| x.to_string()).collect::<Vec<_>>();
+            let rating = image["rating"].as_string().unwrap().chars().nth(0).unwrap();
 
             acc.push(Image{
                 url: image["file_url"].as_string().unwrap().to_string(),
                 tags: tags,
+                id: image["id"].as_i64().unwrap(),
+                rating: rating
             });
             acc
         });

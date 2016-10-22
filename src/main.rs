@@ -1,6 +1,3 @@
-#![allow(warnings)]
-
-extern crate lmdb_rs;
 #[macro_use] extern crate nickel;
 #[macro_use] extern crate log;
 
@@ -14,8 +11,6 @@ use std::fs::{copy,read_dir,create_dir};
 use std::path::Path;
 
 use multipart::server::{Multipart, SaveResult};
-
-use std::collections::HashMap;
 
 use rustc_serialize::json;
 
@@ -46,7 +41,7 @@ fn upload_image<'mw>(req: &mut Request, mut res: Response<'mw>) -> MiddlewareRes
                                     create_dir("assets/images").unwrap();
                                 }
 
-                                let name = db.add_image(&tags,ext).unwrap();
+                                let name = db.add_with_tags_name(&tags,ext).unwrap();
                                 match copy(&savedfile.path,format!("assets/images/{}",name)) {
                                     Ok(_)   => info!("Saved {}", name),
                                     Err(x)  => error!("Can't save image: {}", x)
@@ -68,16 +63,19 @@ fn upload_image<'mw>(req: &mut Request, mut res: Response<'mw>) -> MiddlewareRes
 }
 
 fn show<'a, D>(request: &mut Request<D>, response: Response<'a, D>) -> MiddlewareResult<'a, D> {
-    let name = request.param("name").unwrap().replace("_OPENQ_","(").replace("_CLOSEQ_",")");
-    let ext = request.param("ext").unwrap();
+    let id = request.param("id").unwrap().parse::<i32>().unwrap();
 
-    info!("Showing {}.{}", name, ext);
+    info!("Showing {}", id);
 
-    let name = format!("{}.{}",name, ext);
-    let mut data = HashMap::new();
+    response.send(include_str!("templates/show.html"))
+}
+
+fn get_image<'a, D>(request: &mut Request<D>, mut response: Response<'a, D>) -> MiddlewareResult<'a, D> {
     let db = Db::new();
-    data.insert("image", db.get_image(&name).unwrap());
-    response.render("src/templates/show.html", &data)
+    let id = request.param("id").unwrap().parse::<i32>().unwrap();
+
+    response.set(MediaType::Json);
+    response.send(json::encode(&db.get_image(id).unwrap()).unwrap())
 }
 
 fn more<'a, D>(request: &mut Request<D>, mut response: Response<'a, D>) -> MiddlewareResult<'a, D> {
@@ -104,19 +102,20 @@ fn main() {
         sync::e621();
     }
 
-    let d = db::DbS::new();
-    //d.add_image("test.jpg", &vec!["Sas".to_string(), "Ses".to_string()], "e621", None, 's');
-    println!("{:?}", d.by_tags(25, 0, &["*es".to_string()]));
+    /*let d = db::Db::new();
+    d.add_image("test.jpg", &vec!["Sas".to_string(), "Ses".to_string()], "e621", None, 's');
+    println!("{:?}", d.by_tags(25, 0, &["*es".to_string()]));*/
 
-    /*let mut server = Nickel::new();
+    let mut server = Nickel::new();
 
     server.utilize(StaticFilesHandler::new("assets"));
     server.get("/", index_n_search);
     server.get("/search", index_n_search);
-    server.get("/show/:name.:ext", show);
+    server.get("/show/:id", show);
     server.get("/more", more);
+    server.get("/get_image/:id", get_image);
 
     server.post("/upload_image", upload_image);
 
-    let _server = server.listen("127.0.0.1:3000"); */
+    let _server = server.listen("127.0.0.1:3000");
 }

@@ -4,6 +4,7 @@
     <head>
         <link rel="stylesheet" href="/css/milligram.min.css">
         <link rel="stylesheet" href="/css/main.css">
+        <script src="/js/show.js"></script>
     </head>
     <meta charset="utf-8">
     <body>
@@ -16,19 +17,12 @@
                 <form id="tag-seatch-form" action="/search">
                     <input placeholder="Search" name="q" id="tag-search-field" type="text">
                 </form>
+                <div id="id"></div>
                 <div id="tags">
-                    {{#image}}
-                    {{#tags}}
-                    <br>
-                    <a href="/search?q={{.}}">{{.}}</a>
-                    {{/tags}}
-                    {{/image}}
                 </div>
         </div>
-        {{#image}}
-        <a href="/images/{{name}}">
-            <img src="/images/{{name}}" id="image-block" style="display: block; margin: 0 auto;"></img>
+        <a>
+            <img id="image-block" style="display: block; margin: 0 auto;"></img>
         </a>
-        {{/image}}
     </body>
 </html>

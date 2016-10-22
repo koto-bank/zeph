@@ -6,7 +6,6 @@ authors = ["TyanNN <tyannn@cocaine.ninja>"]
 [dependencies]
 multipart = { version = "*", features = [ "nickel_" ] }
 nickel = "*"
-lmdb-rs = "*"
 rustc-serialize = "*"
 time = "*"
 hyper = "*"

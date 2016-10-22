@@ -1,6 +1,9 @@
+#![allow(warnings)]
+
 extern crate lmdb_rs;
 #[macro_use] extern crate nickel;
 #[macro_use] extern crate log;
+
 extern crate rustc_serialize;
 extern crate multipart;
 
@@ -101,7 +104,11 @@ fn main() {
         sync::e621();
     }
 
-    let mut server = Nickel::new();
+    let d = db::DbS::new();
+    //d.add_image("test.jpg", &vec!["Sas".to_string(), "Ses".to_string()], "e621", None, 's');
+    println!("{:?}", d.by_tags(25, 0, &["*es".to_string()]));
+
+    /*let mut server = Nickel::new();
 
     server.utilize(StaticFilesHandler::new("assets"));
     server.get("/", index_n_search);
@@ -111,5 +118,5 @@ fn main() {
 
     server.post("/upload_image", upload_image);
 
-    let _server = server.listen("127.0.0.1:3000");
+    let _server = server.listen("127.0.0.1:3000"); */
 }

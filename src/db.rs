@@ -1,4 +1,7 @@
+#![allow(warnings)]
+
 extern crate time;
+extern crate rusqlite;
 
 use lmdb_rs::core::*;
 use std::path::Path;
@@ -14,6 +17,16 @@ pub struct Image {
     pub name: String,
     pub link: String,
     pub tags: Vec<String>
+}
+
+#[derive(Debug,Clone,RustcEncodable)]
+pub struct SImage {
+    pub id: i32,
+    pub name: String,
+    pub tags: Vec<String>,
+    pub got_from: String,
+    pub original_link: String,
+    pub rating: char
 }
 
 #[derive(Debug,Clone)]
@@ -181,5 +194,163 @@ impl Db {
         }).skip(skip).take(take).collect::<Vec<_>>();
 
         Ok(res)
+    }
+}
+
+use self::rusqlite::{Result as SQLResult, Row};
+
+pub struct DbS {
+    db: rusqlite::Connection
+}
+
+impl DbS {
+    pub fn new() -> DbS {
+        use self::rusqlite::Connection;
+        use std::path::Path;
+
+        let conn = Connection::open(Path::new("db.db")).unwrap();
+        conn.execute("CREATE TABLE IF NOT EXISTS images(
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name TEXT NOT NULL UNIQUE,
+                    tags TEXT NOT NULL,
+
+                    got_from TEXT,
+                    original_link TEXT,
+                    rating CHAR);",&[]);
+        DbS{
+            db: conn
+        }
+    }
+
+    pub fn add_image<'a, T1: Into<Option<&'a str>>,
+    T2: Into<Option<&'a str>>,
+    C: Into<Option<char>>>(&self, name: &str, tags: &[String], got_from: T1, original_link: T2, rating: C) -> SQLResult<i32> {
+        let mut fields = "INSERT INTO images (name, tags".to_string();
+        let mut values = format!("VALUES('{}', '{}'", name, format!(",{},",tags.join(",")));
+        if let Some(x) = got_from.into() {
+            fields.push_str(", got_from");
+            values.push_str(&format!(", '{}'", x));
+        }
+        if let Some(x) = original_link.into() {
+            fields.push_str(", original_link");
+            values.push_str(&format!(", '{}'", x));
+        }
+        if let Some(x) = rating.into() {
+            fields.push_str(", rating");
+            values.push_str(&format!(", '{}'", x));
+        }
+
+        fields.push_str(")");
+        values.push_str(")");
+
+        let q = format!("{} {}", fields, values);
+        self.db.execute(&q, &[])
+    }
+
+    fn extract_all(row: Row) -> SImage {
+        let id = row.get(0);
+        let name = row.get(1);
+        let mut tags = row.get::<i32,String>(2).split(",").map(|x| x.to_string()).collect::<Vec<_>>();
+        let l = tags.len()-2;
+        tags.remove(0); tags.remove(l);
+
+        let got_from = row.get::<i32, Option<String>>(3).unwrap_or(" ".to_string());
+        let original_link = row.get::<i32,Option<String>>(4).unwrap_or(" ".to_string());
+        let rating = row.get::<i32,String>(5).chars().nth(0).unwrap_or(' ');
+
+        SImage{
+            id: id,
+            name: name,
+            tags: tags,
+            got_from: got_from,
+            original_link: original_link,
+            rating: rating
+        }
+    }
+
+    fn extract_all_ref(row: &Row) -> SImage {
+        let id = row.get(0);
+        let name = row.get(1);
+        let mut tags = row.get::<i32,String>(2).split(",").map(|x| x.to_string()).collect::<Vec<_>>();
+        let l = tags.len()-2;
+        tags.remove(0); tags.remove(l);
+
+        let got_from = row.get::<i32, Option<String>>(3).unwrap_or(" ".to_string());
+        let original_link = row.get::<i32,Option<String>>(4).unwrap_or(" ".to_string());
+        let rating = row.get::<i32,String>(5).chars().nth(0).unwrap_or(' ');
+
+        SImage{
+            id: id,
+            name: name,
+            tags: tags,
+            got_from: got_from,
+            original_link: original_link,
+            rating: rating
+        }
+    }
+
+    pub fn get_image(&self, id: i32) -> SQLResult<SImage> {
+        self.db.query_row("SELECT * FROM images WHERE id = ?", &[&id], DbS::extract_all)
+    }
+
+    pub fn get_images<T: Into<Option<usize>>>(&self, take: T, skip: usize) -> SQLResult<Vec<SImage>>{
+        let take = match take.into() {
+            Some(x) => format!("LIMIT {}", x),
+            None    => "".to_string()
+        };
+
+        let mut st =  try!(self.db.prepare(&format!("SELECT * FROM images {} OFFSET {}", take, skip)));
+        let st = try!(st.query_map(&[], DbS::extract_all_ref)).map(|x| x.unwrap());
+        Ok(st.collect::<Vec<_>>())
+    }
+
+    pub fn by_tags<T: Into<Option<usize>>>(&self, take: T, skip: usize, tags: &[String]) -> SQLResult<Vec<SImage>> {
+        let mut q = String::new();
+
+        let tags = tags.iter().map(|x| parse_tag(&x.replace("_",r"\_").replace("%", r"\%"))).collect::<Vec<_>>();
+
+        for t in tags {
+            match t {
+                Tag::Include(ref incl) => q.push_str(&format!(r"tags LIKE '%,{},%' ESCAPE '\' AND ", incl)),
+                Tag::Exclude(ref excl) => q.push_str(&format!(r"tags NOT LIKE '%,{},%' ESCAPE '\' AND ", excl)),
+                Tag::AnyWith(ref x) => match *x {
+                    AnyWith::Before(ref bef) => q.push_str(&format!(r"tags LIKE '%,{}%,%' ESCAPE '\' AND ", bef)),
+                    AnyWith::After(ref aft) => q.push_str(&format!(r"tags LIKE '%,%{},%' ESCAPE '\' AND ", aft)),
+                },
+                Tag::Rating(ref r) => {
+                    for tg in r {
+                        q.push_str(&format!("rating = '{}' AND ", tg))
+                    }}
+            }
+        }
+
+
+        let _ = (0..5).inspect(|_| { q.pop(); }).collect::<Vec<_>>();
+
+        let take = match take.into() {
+            Some(x) => format!("LIMIT {}", x),
+            None    => "".to_string()
+        };
+
+        let mut st = try!(self.db.prepare(&format!("SELECT * FROM images WHERE {} {} OFFSET {}", q, take, skip)));
+        let st = try!(st.query_map(&[], DbS::extract_all_ref)).map(|x| x.unwrap());
+        Ok(st.collect::<Vec<_>>())
+    }
+}
+
+fn parse_tag(tag: &str) -> Tag {
+    if tag.starts_with("rating") {
+        let tag = tag.split("rating:").collect::<Vec<_>>()[1];
+        Tag::Rating(tag.split(',').map(|x| x.to_string()).collect::<Vec<_>>())
+    } else if tag.starts_with('-') {
+        Tag::Exclude(tag[1..].to_string())
+    } else if tag.starts_with('*') {
+        Tag::AnyWith(AnyWith::After(tag[1..].to_string()))
+    } else if tag.ends_with("*") {
+        let mut n = tag.to_string();
+        n.pop();
+        Tag::AnyWith(AnyWith::Before(n))
+    } else {
+        Tag::Include(tag.to_string())
     }
 }

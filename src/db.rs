@@ -54,7 +54,7 @@ impl Db {
     pub fn add_with_tags_name(&self, tags: &[String], ext: &str) -> SQLResult<String> {
         let mut name = tags.join("_").replace("'","''");
         name.push_str(ext);
-        try!(self.add_image(&name, tags, None, None, None));
+        self.add_image(&name, tags, None, None, None)?;
         Ok(name)
     }
 
@@ -136,8 +136,8 @@ impl Db {
             None    => -1
         };
 
-        let mut st = try!(self.db.prepare(&format!("SELECT * FROM images LIMIT {} OFFSET {}", take, skip)));
-        let st = try!(st.query_map(&[], Db::extract_all_ref)).map(|x| x.unwrap());
+        let mut st = self.db.prepare(&format!("SELECT * FROM images LIMIT {} OFFSET {}", take, skip))?;
+        let st = st.query_map(&[], Db::extract_all_ref)?.map(|x| x.unwrap());
         Ok(st.collect::<Vec<_>>())
     }
 
@@ -182,8 +182,8 @@ impl Db {
             None    => -1
         };
 
-        let mut st = try!(self.db.prepare(&format!("SELECT * FROM images WHERE {} LIMIT {} OFFSET {}", q, take, skip)));
-        let st = try!(st.query_map(&[], Db::extract_all_ref)).map(|x| x.unwrap());
+        let mut st = self.db.prepare(&format!("SELECT * FROM images WHERE {} LIMIT {} OFFSET {}", q, take, skip))?;
+        let st = st.query_map(&[], Db::extract_all_ref)?.map(|x| x.unwrap());
         Ok(st.collect::<Vec<_>>())
     }
 }

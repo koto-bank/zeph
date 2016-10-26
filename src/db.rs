@@ -136,7 +136,7 @@ impl Db {
             None    => -1
         };
 
-        let mut st = self.db.prepare(&format!("SELECT * FROM images LIMIT {} OFFSET {}", take, skip))?;
+        let mut st = self.db.prepare(&format!("SELECT * FROM images ORDER BY id DESC LIMIT {} OFFSET {}", take, skip))?;
         let st = st.query_map(&[], Db::extract_all_ref)?.map(|x| x.unwrap());
         Ok(st.collect::<Vec<_>>())
     }
@@ -182,7 +182,7 @@ impl Db {
             None    => -1
         };
 
-        let mut st = self.db.prepare(&format!("SELECT * FROM images WHERE {} LIMIT {} OFFSET {}", q, take, skip))?;
+        let mut st = self.db.prepare(&format!("SELECT * FROM images WHERE {} ORDER BY id DESC LIMIT {} OFFSET {}", q, take, skip))?;
         let st = st.query_map(&[], Db::extract_all_ref)?.map(|x| x.unwrap());
         Ok(st.collect::<Vec<_>>())
     }

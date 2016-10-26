@@ -109,7 +109,7 @@ fn main() {
     }
 
     if std::env::args().any(|x| x == "sync") {
-        sync::e621();
+        sync::main();
     }
 
     /*let d = db::Db::new();

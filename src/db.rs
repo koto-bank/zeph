@@ -87,7 +87,7 @@ impl Db {
     fn extract_all(row: Row) -> Image {
         let id = row.get(0);
         let name = row.get(1);
-        let mut tags = row.get::<i32,String>(2).split(',').map(|x| x.to_string()).collect::<Vec<_>>();
+        let mut tags = row.get::<i32,String>(2).split(',').map(String::from).collect::<Vec<_>>();
         let l = tags.len()-2;
         tags.remove(0); tags.remove(l);
 
@@ -108,7 +108,7 @@ impl Db {
     fn extract_all_ref(row: &Row) -> Image {
         let id = row.get(0);
         let name = row.get(1);
-        let mut tags = row.get::<i32,String>(2).split(',').map(|x| x.to_string()).collect::<Vec<_>>();
+        let mut tags = row.get::<i32,String>(2).split(',').map(String::from).collect::<Vec<_>>();
         let l = tags.len()-2;
         tags.remove(0); tags.remove(l);
 
@@ -191,10 +191,10 @@ impl Db {
 fn parse_tag(tag: &str) -> Tag {
     if tag.starts_with("rating") {
         let tag = tag.split("rating:").collect::<Vec<_>>()[1];
-        Tag::Rating(tag.split(',').map(|x| x.to_string()).collect::<Vec<_>>())
+        Tag::Rating(tag.split(',').map(String::from).collect::<Vec<_>>())
     } else if tag.starts_with("from") {
         let tag = tag.split("from:").collect::<Vec<_>>()[1];
-        Tag::From(tag.split(',').map(|x| x.to_string()).collect::<Vec<_>>())
+        Tag::From(tag.split(',').map(String::from).collect::<Vec<_>>())
     } else if tag.starts_with('-') {
         Tag::Exclude(tag[1..].to_string())
     } else if tag.starts_with('*') {

@@ -33,7 +33,7 @@ fn upload_image<'mw>(req: &mut Request, mut res: Response<'mw>) -> MiddlewareRes
                         if let Some(ref filename) = savedfile.filename {
                             if let Some(tags) = entries.fields.get("tags") {
                                 let db = Db::new();
-                                let tags = tags.split_whitespace().map(|x| x.to_string()).collect::<Vec<_>>();
+                                let tags = tags.split_whitespace().map(String::from).collect::<Vec<_>>();
                                 let ext = Path::new(&filename).extension().unwrap().to_str().unwrap();
 
                                 if let Err(_) = read_dir("assets/images") {
@@ -85,13 +85,23 @@ fn more<'a, D>(request: &mut Request<D>, mut response: Response<'a, D>) -> Middl
     info!("Requested more with offset {}", offset);
 
     let images = match request.query().get("q") {
-        Some(x) =>  db.by_tags(25, offset, &x.to_lowercase().split_whitespace().map(|x| x.to_string()).collect::<Vec<_>>()).unwrap(),
+        Some(x) =>  db.by_tags(25, offset, &x.to_lowercase().split_whitespace().map(String::from).collect::<Vec<_>>()).unwrap(),
         None    =>  db.get_images(25, offset).unwrap()
     };
 
     response.set(MediaType::Json);
     response.send(json::encode(&images).unwrap())
 }
+
+macro_rules! routes(
+    { $serv:ident, $($method:ident $($path:expr),+ => $fun:ident),+ } => {
+        {
+            $($(
+                    $serv.$method($path, $fun);
+               )+)+
+        }
+     };
+);
 
 fn main() {
     if std::env::args().any(|x| x == "log") {
@@ -109,13 +119,15 @@ fn main() {
     let mut server = Nickel::new();
 
     server.utilize(StaticFilesHandler::new("assets"));
-    server.get("/", index_n_search);
-    server.get("/search", index_n_search);
-    server.get("/show/:id", show);
-    server.get("/more", more);
-    server.get("/get_image/:id", get_image);
 
-    server.post("/upload_image", upload_image);
+    routes!{server,
+        get "/","/search" => index_n_search,
+        get "/show/:id" => show,
+        get "/more" => more,
+        get "/get_image/:id" => get_image,
+
+        post "/upload_image" => upload_image
+    };
 
     let _server = server.listen("127.0.0.1:3000");
 }

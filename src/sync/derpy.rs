@@ -34,7 +34,9 @@ pub fn main(rc: &Receiver<()>) {
             let mut rating = String::new();
 
             let tags = image["tags"].as_string().unwrap().split(",").map(|x| x.trim().replace(" ", "_")).filter_map(|x| {
-                if x == "safe" || x == "semi-grimdark" {
+                if x.starts_with("artist:") {
+                    Some(x.split(":").collect::<Vec<_>>()[1].to_string())
+                } else if x == "safe" || x == "semi-grimdark" {
                     rating = "s".to_string();
                     None
                 } else if x == "explicit" || x == "grimdark" || x == "grotesque" {

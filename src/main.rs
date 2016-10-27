@@ -14,9 +14,12 @@ use multipart::server::{Multipart, SaveResult};
 
 use rustc_serialize::json;
 
+use std::thread;
+
 mod db;
 mod logger;
 mod sync;
+mod console;
 
 use db::Db;
 use logger::ZephLogger;
@@ -108,10 +111,6 @@ fn main() {
         ZephLogger::init().unwrap();
     }
 
-    if std::env::args().any(|x| x == "sync") {
-        sync::main();
-    }
-
     /*let d = db::Db::new();
     d.add_image("test.jpg", &vec!["Sas".to_string(), "Ses".to_string()], "e621", None, 's');
     println!("{:?}", d.by_tags(25, 0, &["*es".to_string()]));*/
@@ -128,6 +127,8 @@ fn main() {
 
         post "/upload_image" => upload_image
     };
+
+    thread::spawn(console::main);
 
     let _server = server.listen("127.0.0.1:3000");
 }

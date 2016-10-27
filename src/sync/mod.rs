@@ -13,9 +13,10 @@ use std::fs::{File,read_dir,create_dir};
 use std::path::Path;
 
 use ::db::Db;
-use ::logger::ZephLogger;
 
 use rustc_serialize::json::Json;
+
+use std::sync::mpsc::{Receiver,TryRecvError};
 
 #[derive(Debug)]
 pub struct Image {
@@ -27,10 +28,18 @@ pub struct Image {
     post_url: String
 }
 
-mod e621;
-mod derpy;
+pub mod e621;
+pub mod derpy;
 
-fn download(client: &Client, im: &Image) {
+fn download(client: &Client, im: &Image, recv: &Receiver<()>) -> Result<(),()> {
+
+    match recv.try_recv() {
+        Ok(_) | Err(TryRecvError::Disconnected) => {
+            return Err(());
+        }
+        Err(TryRecvError::Empty) => {}
+    }
+
     let mut res = client.get(&im.url)
         .header(UserAgent("Zeph/1.0".to_owned()))
         .send().unwrap();
@@ -47,6 +56,8 @@ fn download(client: &Client, im: &Image) {
     let mut f = File::create(Path::new(&format!("assets/images/{}", im.name))).unwrap();
     f.write(&body).unwrap();
     info!(r"{} {}", im.name, Green.paint("done"));
+
+    Ok(())
 }
 
 fn req_and_parse(client: &Client, url: &str) -> Result<Json, hyper::Error> {
@@ -64,10 +75,4 @@ fn req_and_parse(client: &Client, url: &str) -> Result<Json, hyper::Error> {
     res.read_to_string(&mut body).unwrap();
 
     Ok(Json::from_str(&body).unwrap())
-}
-
-pub fn main() {
-    ZephLogger::init().unwrap();
-    //e621::main();
-    derpy::main();
 }

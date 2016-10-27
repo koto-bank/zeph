@@ -8,13 +8,15 @@ use std::time::Duration;
 use ::db::Db;
 use super::{Image,download,req_and_parse};
 
-pub fn main() {
+use std::sync::mpsc::Receiver;
+
+pub fn main(rc: &Receiver<()>) {
     let db = Db::new();
     let client = Client::new();
     let images_c = db.get_images(None,0).unwrap();
     let mut url_string = "https://e621.net/post/index.json".to_string();
 
-    loop {
+    'main: loop {
         let res = match req_and_parse(&client, &url_string) {
             Ok(x) => x,
             Err(_) => { 
@@ -62,7 +64,9 @@ pub fn main() {
 
         for im in images {
             if !images_c.iter().any(|x| x.name == im.name ) {
-                download(&client, &im);
+                if let Err(_) = download(&client, &im, &rc) {
+                    break 'main
+                }
             }
         }
 

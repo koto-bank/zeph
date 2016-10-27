@@ -8,14 +8,16 @@ use std::time::Duration;
 use ::db::Db;
 use super::{Image,download,req_and_parse};
 
-pub fn main() {
+use std::sync::mpsc::Receiver;
+
+pub fn main(rc: &Receiver<()>) {
     let db = Db::new();
     let client = Client::new();
     let images_c = db.get_images(None,0).unwrap();
     let mut url_string = "https://derpibooru.org/images.json".to_string();
     let mut page = 1;
 
-    loop {
+    'main: loop {
         let res = match req_and_parse(&client, &url_string) {
             Ok(x) => x,
             Err(_) => {
@@ -31,7 +33,7 @@ pub fn main() {
             let image = x.as_object().unwrap();
             let mut rating = String::new();
 
-            let tags = image["tags"].as_string().unwrap().split(",").map(|x| x.trim()).filter_map(|x| {
+            let tags = image["tags"].as_string().unwrap().split(",").map(|x| x.trim().replace(" ", "_")).filter_map(|x| {
                 if x == "safe" || x == "semi-grimdark" {
                     rating = "s".to_string();
                     None
@@ -62,7 +64,9 @@ pub fn main() {
 
         for im in images {
             if !images_c.iter().any(|x| x.name == im.name ) {
-                download(&client, &im);
+                if let Err(_) = download(&client, &im, &rc) {
+                    break 'main
+                }
             }
         }
 

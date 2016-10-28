@@ -14,7 +14,7 @@ pub fn main(rc: &Receiver<()>) {
     let db = Db::new();
     let client = Client::new();
     let images_c = db.get_images(None,0).unwrap();
-    let mut url_string = "https://derpibooru.org/images.json".to_string();
+    let mut url_string = "https://derpibooru.org/search.json?q=score.gt:0&filter_id=56027".to_string();
     let mut page = 1;
 
     'main: loop {
@@ -26,7 +26,7 @@ pub fn main(rc: &Receiver<()>) {
             }
         };
 
-        let images = res.as_object().unwrap()["images"].as_array().unwrap();
+        let images = res.as_object().unwrap()["search"].as_array().unwrap();
         if images.is_empty() { break }
 
         let images = images.iter().fold(Vec::new(), |mut acc, x| {
@@ -74,6 +74,6 @@ pub fn main(rc: &Receiver<()>) {
 
         page += 1;
 
-        url_string = format!("https://derpibooru.org/images.json?page={}", page);
+        url_string = format!("https://derpibooru.org/search.json?q=score.gt:0&filter_id=56027&page={}", page);
     }
 }

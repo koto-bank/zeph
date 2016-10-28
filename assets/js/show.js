@@ -27,6 +27,15 @@ function load(){
             l.href = "/search?q=rating:" + body["rating"];
             l.textContent = "rating:" + body["rating"];
             tags_block.appendChild(l);
+            tags_block.appendChild(document.createElement("br"));
+        }
+
+        if (body["got_from"] != " ") {
+            var l = document.createElement("a");
+            l.href = "/search?q=from:" + body["got_from"];
+            l.textContent = "from:" + body["got_from"];
+            tags_block.appendChild(l);
+            tags_block.appendChild(document.createElement("br"));
         }
 
         body["tags"].forEach(function(tag) {

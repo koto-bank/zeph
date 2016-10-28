@@ -65,9 +65,8 @@ body {
 }
 
 .thumbnail {
-    margin: .5%;
-    background-color: white;
-    width: 200px;
+    margin: 2px;
+    width: 160px;
     height: 300px;
     display: inline-block; 
     background-size: cover; 

@@ -33,14 +33,14 @@ pub fn main(rc: &Receiver<()>) {
             let image = x.as_object().unwrap();
             let mut rating = String::new();
 
-            let tags = image["tags"].as_string().unwrap().split(",").map(|x| x.trim().replace(" ", "_")).filter_map(|x| {
+            let tags = image["tags"].as_string().unwrap().split(',').map(|x| x.trim().replace(" ", "_")).filter_map(|x| {
                 if x.starts_with("artist:") {
-                    Some(x.split(":").collect::<Vec<_>>()[1].to_string())
+                    Some(x.split(':').collect::<Vec<_>>()[1].to_string())
                 } else if x == "safe" || x == "semi-grimdark" {
                     rating = "s".to_string();
                     None
                 } else if x == "explicit" || x == "grimdark" || x == "grotesque" {
-                    rating = "s".to_string();
+                    rating = "e".to_string();
                     None
                 } else if x == "questionable" || x == "suggestive" {
                     rating = "q".to_string();
@@ -66,7 +66,7 @@ pub fn main(rc: &Receiver<()>) {
 
         for im in images {
             if !images_c.iter().any(|x| x.name == im.name ) {
-                if let Err(_) = download(&client, &im, &rc) {
+                if let Err(_) = download(&client, &im, rc) {
                     break 'main
                 }
             }

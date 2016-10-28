@@ -1,6 +1,7 @@
 extern crate hyper;
 extern crate rustc_serialize;
 extern crate ansi_term;
+extern crate image;
 
 use self::ansi_term::Color::{Green, Red};
 
@@ -17,6 +18,8 @@ use ::db::Db;
 use rustc_serialize::json::Json;
 
 use std::sync::mpsc::{Receiver,TryRecvError};
+
+use self::image::FilterType;
 
 #[derive(Debug)]
 pub struct Image {
@@ -60,9 +63,18 @@ fn download(client: &Client, im: &Image, recv: &Receiver<()>) -> Result<(),()> {
     if let Err(_) = read_dir("assets/images") {
         create_dir("assets/images").unwrap();
     }
+    if let Err(_) = read_dir("assets/images/preview") {
+        create_dir("assets/images/preview").unwrap();
+    }
+
+    let prev = image::load_from_memory(&body).unwrap().resize(500, 500, FilterType::Nearest);
 
     let mut f = File::create(Path::new(&format!("assets/images/{}", im.name))).unwrap();
+    let mut prevf = File::create(&Path::new(&format!("assets/images/preview/{}", im.name))).unwrap();
+
     f.write(&body).unwrap();
+    prev.save(&mut prevf, image::JPEG).unwrap();
+
     print_success(&im.name);
 
     Ok(())

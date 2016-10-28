@@ -64,7 +64,7 @@ pub fn main(rc: &Receiver<()>) {
 
         for im in images {
             if !images_c.iter().any(|x| x.name == im.name ) {
-                if let Err(_) = download(&client, &im, &rc) {
+                if let Err(_) = download(&client, &im, rc) {
                     break 'main
                 }
             }

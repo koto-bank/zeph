@@ -1,9 +1,8 @@
 extern crate hyper;
 extern crate rustc_serialize;
-extern crate log;
 extern crate ansi_term;
 
-use self::ansi_term::Color::Green;
+use self::ansi_term::Color::{Green, Red};
 
 use self::hyper::client::Client;
 use self::hyper::header::UserAgent;
@@ -11,6 +10,7 @@ use self::hyper::header::UserAgent;
 use std::io::{Read,Write};
 use std::fs::{File,read_dir,create_dir};
 use std::path::Path;
+use std::fmt::Display;
 
 use ::db::Db;
 
@@ -30,6 +30,14 @@ pub struct Image {
 
 pub mod e621;
 pub mod derpy;
+
+fn print_success<T: Display>(name: &T) {
+    println!("{} {}", name, Green.paint("done"));
+}
+
+fn print_err<T: Display>(err: &T) {
+    println!("{}: {}", Red.paint("ERROR"), err);
+}
 
 fn download(client: &Client, im: &Image, recv: &Receiver<()>) -> Result<(),()> {
 
@@ -55,7 +63,7 @@ fn download(client: &Client, im: &Image, recv: &Receiver<()>) -> Result<(),()> {
 
     let mut f = File::create(Path::new(&format!("assets/images/{}", im.name))).unwrap();
     f.write(&body).unwrap();
-    info!(r"{} {}", im.name, Green.paint("done"));
+    print_success(&im.name);
 
     Ok(())
 }
@@ -66,7 +74,7 @@ fn req_and_parse(client: &Client, url: &str) -> Result<Json, hyper::Error> {
         .send() {
             Ok(x)   => x,
             Err(x)  => {
-                error!("{}", x);
+                print_err(&x);
                 return Err(x)
             }
         };

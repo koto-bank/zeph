@@ -1,5 +1,4 @@
 #[macro_use] extern crate nickel;
-#[macro_use] extern crate log;
 
 extern crate rustc_serialize;
 extern crate multipart;
@@ -17,12 +16,10 @@ use rustc_serialize::json;
 use std::thread;
 
 mod db;
-mod logger;
 mod sync;
 mod console;
 
 use db::Db;
-use logger::ZephLogger;
 
 fn index_n_search<'a, D>(_request: &mut Request<D>, response: Response<'a, D>) -> MiddlewareResult<'a, D> {
     response.send(include_str!("templates/index.html"))
@@ -40,15 +37,11 @@ fn upload_image<'mw>(req: &mut Request, mut res: Response<'mw>) -> MiddlewareRes
                                 let ext = Path::new(&filename).extension().unwrap().to_str().unwrap();
 
                                 if let Err(_) = read_dir("assets/images") {
-                                    error!("Images directory does not exist, creating..");
                                     create_dir("assets/images").unwrap();
                                 }
 
                                 let name = db.add_with_tags_name(&tags,ext).unwrap();
-                                match copy(&savedfile.path,format!("assets/images/{}",name)) {
-                                    Ok(_)   => info!("Saved {}", name),
-                                    Err(x)  => error!("Can't save image: {}", x)
-                                }
+                                let _ = copy(&savedfile.path,format!("assets/images/{}",name));
 
                                 res.redirect("/")
 
@@ -65,11 +58,7 @@ fn upload_image<'mw>(req: &mut Request, mut res: Response<'mw>) -> MiddlewareRes
     }
 }
 
-fn show<'a, D>(request: &mut Request<D>, response: Response<'a, D>) -> MiddlewareResult<'a, D> {
-    let id = request.param("id").unwrap().parse::<i32>().unwrap();
-
-    info!("Showing {}", id);
-
+fn show<'a, D>(_request: &mut Request<D>, response: Response<'a, D>) -> MiddlewareResult<'a, D> {
     response.send(include_str!("templates/show.html"))
 }
 
@@ -84,8 +73,6 @@ fn get_image<'a, D>(request: &mut Request<D>, mut response: Response<'a, D>) -> 
 fn more<'a, D>(request: &mut Request<D>, mut response: Response<'a, D>) -> MiddlewareResult<'a, D> {
     let db = Db::new();
     let offset = request.query().get("offset").unwrap().parse::<usize>().unwrap();
-
-    info!("Requested more with offset {}", offset);
 
     let images = match request.query().get("q") {
         Some(x) =>  db.by_tags(25, offset, &x.to_lowercase().split_whitespace().map(String::from).collect::<Vec<_>>()).unwrap(),
@@ -107,10 +94,6 @@ macro_rules! routes(
 );
 
 fn main() {
-    if std::env::args().any(|x| x == "log") {
-        ZephLogger::init().unwrap();
-    }
-
     /*let d = db::Db::new();
     d.add_image("test.jpg", &vec!["Sas".to_string(), "Ses".to_string()], "e621", None, 's');
     println!("{:?}", d.by_tags(25, 0, &["*es".to_string()]));*/

@@ -3,15 +3,12 @@ use std::sync::mpsc;
 use std::thread;
 
 use ::sync;
-use ::logger::ZephLogger;
 
 use std::collections::HashMap;
 
 pub fn main() {
     let mut senders = HashMap::new();
     let mut id = 0;
-
-    ZephLogger::init().unwrap();
 
     loop {
         print!("> ");

@@ -7,7 +7,6 @@ authors = ["TyanNN <tyannn@cocaine.ninja>"]
 multipart = { version = "*", features = [ "nickel_" ] }
 nickel = "*"
 rustc-serialize = "*"
-time = "*"
 hyper = "*"
 ansi_term = "*"
 rusqlite = "*"

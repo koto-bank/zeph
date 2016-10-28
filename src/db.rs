@@ -1,4 +1,3 @@
-extern crate time;
 extern crate rusqlite;
 
 pub struct Db {

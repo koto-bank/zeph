@@ -43,6 +43,23 @@ fn print_err<T: Display>(err: &T) {
     println!("{}: {}", Red.paint("ERROR"), err);
 }
 
+pub fn save_image(dir: &Path, name: &str, file: &[u8]) {
+    if let Err(_) = read_dir("assets/images") {
+        create_dir("assets/images").unwrap();
+    }
+    if let Err(_) = read_dir("assets/images/preview") {
+        create_dir("assets/images/preview").unwrap();
+    }
+
+    let prev = image::load_from_memory(file).unwrap().resize(500, 500, FilterType::Nearest);
+
+    let mut f = File::create(dir.join(name)).unwrap();
+    let mut prevf = File::create(dir.join("preview").join(name)).unwrap();
+
+    f.write(&file).unwrap();
+    prev.save(&mut prevf, image::JPEG).unwrap();
+}
+
 fn download(client: &Client, im: &Image, recv: &Receiver<()>) -> Result<(),()> {
     match recv.try_recv() {
         Ok(_) | Err(TryRecvError::Disconnected) => {
@@ -60,20 +77,7 @@ fn download(client: &Client, im: &Image, recv: &Receiver<()>) -> Result<(),()> {
     let db = Db::new();
     db.add_image(&im.name, &im.tags, im.got_from.as_str(), im.post_url.as_str(), im.rating).unwrap();
 
-    if let Err(_) = read_dir("assets/images") {
-        create_dir("assets/images").unwrap();
-    }
-    if let Err(_) = read_dir("assets/images/preview") {
-        create_dir("assets/images/preview").unwrap();
-    }
-
-    let prev = image::load_from_memory(&body).unwrap().resize(500, 500, FilterType::Nearest);
-
-    let mut f = File::create(Path::new(&format!("assets/images/{}", im.name))).unwrap();
-    let mut prevf = File::create(&Path::new(&format!("assets/images/preview/{}", im.name))).unwrap();
-
-    f.write(&body).unwrap();
-    prev.save(&mut prevf, image::JPEG).unwrap();
+    save_image(&Path::new("assets/images"), &im.name, &body);
 
     print_success(&im.name);
 

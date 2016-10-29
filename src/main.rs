@@ -6,20 +6,21 @@ extern crate multipart;
 use nickel::{Nickel, Request, Response, MiddlewareResult, HttpRouter, StaticFilesHandler, QueryString, MediaType};
 use nickel::extensions::Redirect;
 
-use std::fs::{copy,read_dir,create_dir};
+use std::fs::File;
 use std::path::Path;
+use std::io::Read;
+use std::thread;
 
 use multipart::server::{Multipart, SaveResult};
 
 use rustc_serialize::json;
-
-use std::thread;
 
 mod db;
 mod sync;
 mod console;
 
 use db::Db;
+use sync::save_image;
 
 fn index_n_search<'a, D>(_request: &mut Request<D>, response: Response<'a, D>) -> MiddlewareResult<'a, D> {
     response.send(include_str!("templates/index.html"))
@@ -34,14 +35,11 @@ fn upload_image<'mw>(req: &mut Request, mut res: Response<'mw>) -> MiddlewareRes
                             if let Some(tags) = entries.fields.get("tags") {
                                 let db = Db::new();
                                 let tags = tags.split_whitespace().map(String::from).collect::<Vec<_>>();
-                                let ext = Path::new(&filename).extension().unwrap().to_str().unwrap();
+                                let mut body = Vec::new();
+                                let _ = File::open(&savedfile.path).unwrap().read_to_end(&mut body);
+                                let name = db.add_with_tags_name(&tags, filename.split(".").collect::<Vec<_>>()[1]).unwrap();
 
-                                if let Err(_) = read_dir("assets/images") {
-                                    create_dir("assets/images").unwrap();
-                                }
-
-                                let name = db.add_with_tags_name(&tags,ext).unwrap();
-                                let _ = copy(&savedfile.path,format!("assets/images/{}",name));
+                                save_image(&Path::new("assets/images"), &name, &body);
 
                                 res.redirect("/")
 

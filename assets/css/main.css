@@ -39,7 +39,8 @@ body {
 }
 
 #tags {
-    height: 90%;
+    height: 85%;
+    word-wrap: break-word;
     overflow-y: auto;
 }
 
@@ -68,8 +69,8 @@ body {
     margin: 2px;
     width: 160px;
     height: 300px;
-    display: inline-block; 
-    background-size: cover; 
+    display: inline-block;
+    background-size: cover;
     background-position: center center;
     background-repeat: no-repeat;
 }

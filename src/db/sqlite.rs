@@ -28,8 +28,7 @@ impl Db {
     }
 
     pub fn add_with_tags_name(&self, tags: &[String], ext: &str) -> SQLResult<String> {
-        let mut name = tags.join("_").replace("'","''");
-        name.push_str(ext);
+        let name = tags.join("_").replace("'","''") + "." + ext;
         self.add_image(&name, tags, None, None, None)?;
         Ok(name)
     }

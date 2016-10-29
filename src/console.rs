@@ -24,6 +24,7 @@ pub fn main() {
                     match *func {
                         "derpy" => { thread::spawn(move || sync::derpy::main(&recvr)); },
                         "e621"  => { thread::spawn(move || sync::e621::main(&recvr)); },
+                        "dan"   => { thread::spawn(move || sync::danbooru::main(&recvr)); }
                         _       => println!("Error: function not found")
                     };
                     println!("ID: {}", id);

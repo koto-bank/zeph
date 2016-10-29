@@ -33,6 +33,7 @@ pub struct Image {
 
 pub mod e621;
 pub mod derpy;
+pub mod danbooru;
 
 fn print_success<T: Display>(name: &T) {
     println!("{} {}", name, Green.paint("done"));
@@ -43,7 +44,6 @@ fn print_err<T: Display>(err: &T) {
 }
 
 fn download(client: &Client, im: &Image, recv: &Receiver<()>) -> Result<(),()> {
-
     match recv.try_recv() {
         Ok(_) | Err(TryRecvError::Disconnected) => {
             return Err(());

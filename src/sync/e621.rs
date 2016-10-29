@@ -19,7 +19,7 @@ pub fn main(rc: &Receiver<()>) {
     'main: loop {
         let res = match req_and_parse(&client, &url_string) {
             Ok(x) => x,
-            Err(_) => { 
+            Err(_) => {
                 thread::sleep(Duration::new(3,0));
                 continue
             }

@@ -38,7 +38,7 @@ function loadMore() {
             var im = document.createElement("div");
             im.title = image.tags.join(" ");
             im.className = "thumbnail";
-            im.style.backgroundImage = "url(/images/preview/"+image.name+")";
+            im.style.backgroundImage = "url(\"/images/preview/"+image.name+"\")";
 
             link.appendChild(im);
             image_block.appendChild(link);

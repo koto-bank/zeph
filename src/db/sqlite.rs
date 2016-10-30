@@ -28,7 +28,11 @@ impl Db {
     }
 
     pub fn add_with_tags_name(&self, tags: &[String], ext: &str) -> SQLResult<String> {
-        let name = format!("{}_{}.{}",self.db.last_insert_rowid() + 1, tags.join("_").replace("'","''"),ext);
+        let lastnum = self.db.query_row("SELECT id FROM images ORDER BY id DESC LIMIT 1", &[], |row| {
+            row.get::<i32,i32>(0)
+        }).unwrap();
+
+        let name = format!("{}_{}.{}", lastnum + 1  , tags.join("_").replace("'","''"),ext);
         self.add_image(&name, tags, None, None, None)?;
         Ok(name)
     }

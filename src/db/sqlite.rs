@@ -33,6 +33,7 @@ impl Db {
         }
     }
 
+    /// Сохранить картинку, сгенерировава имя из тэгов
     pub fn add_with_tags_name(&self, tags: &[String], ext: &str) -> SQLResult<String> {
         let lastnum = self.db.query_row("SELECT id FROM images ORDER BY id DESC LIMIT 1", &[], |row| {
             row.get::<i32,i32>(0)

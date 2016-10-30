@@ -42,6 +42,7 @@ fn print_err<T: Display>(err: &T) {
     println!("{}: {}", Red.paint("ERROR"), err);
 }
 
+/// Сохраняет картинку & создаёт к ней превью
 pub fn save_image(dir: &Path, name: &str, file: &[u8]) {
     if let Err(_) = read_dir("assets/images") {
         create_dir("assets/images").unwrap();
@@ -59,6 +60,7 @@ pub fn save_image(dir: &Path, name: &str, file: &[u8]) {
     prev.save(&mut prevf, image::JPEG).unwrap();
 }
 
+/// Качает картинку, прерываясь, если из консоли поступил kill
 fn download(client: &Client, im: &Image, recv: &Receiver<()>) -> Result<(),()> {
     match recv.try_recv() {
         Ok(_) | Err(TryRecvError::Disconnected) => {
@@ -82,6 +84,7 @@ fn download(client: &Client, im: &Image, recv: &Receiver<()>) -> Result<(),()> {
     Ok(())
 }
 
+/// Запросить и распарсить JSON
 fn req_and_parse(client: &Client, url: &str) -> Result<Json, hyper::Error> {
     let mut res = match client.get(url)
         .header(UserAgent("Zeph/1.0".to_owned()))

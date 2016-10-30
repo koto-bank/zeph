@@ -1,4 +1,5 @@
 #[macro_use] extern crate nickel;
+#[macro_use] extern crate lazy_static;
 
 extern crate rustc_serialize;
 extern crate multipart;
@@ -26,6 +27,10 @@ fn index_n_search<'a, D>(_request: &mut Request<D>, response: Response<'a, D>) -
     response.send(include_str!("templates/index.html"))
 }
 
+lazy_static! {
+    pub static ref DB : Db = Db::new();
+}
+
 fn upload_image<'mw>(req: &mut Request, mut res: Response<'mw>) -> MiddlewareResult<'mw> {
     if let Ok(mut multipart) = Multipart::from_request(req) {
             match multipart.save_all() {
@@ -33,11 +38,10 @@ fn upload_image<'mw>(req: &mut Request, mut res: Response<'mw>) -> MiddlewareRes
                     if let Some(savedfile) = entries.files.get("image") {
                         if let Some(ref filename) = savedfile.filename {
                             if let Some(tags) = entries.fields.get("tags") {
-                                let db = Db::new();
                                 let tags = tags.split_whitespace().map(String::from).collect::<Vec<_>>();
                                 let mut body = Vec::new();
                                 let _ = File::open(&savedfile.path).unwrap().read_to_end(&mut body);
-                                let name = db.add_with_tags_name(&tags, filename.split('.').collect::<Vec<_>>()[1]).unwrap();
+                                let name = DB.add_with_tags_name(&tags, filename.split('.').collect::<Vec<_>>()[1]).unwrap();
 
                                 save_image(Path::new("assets/images"), &name, &body);
 
@@ -61,20 +65,17 @@ fn show<'a, D>(_request: &mut Request<D>, response: Response<'a, D>) -> Middlewa
 }
 
 fn get_image<'a, D>(request: &mut Request<D>, mut response: Response<'a, D>) -> MiddlewareResult<'a, D> {
-    let db = Db::new();
     let id = request.param("id").unwrap().parse::<i32>().unwrap();
-
     response.set(MediaType::Json);
-    response.send(json::encode(&db.get_image(id).unwrap()).unwrap())
+    response.send(json::encode(&DB.get_image(id).unwrap()).unwrap())
 }
 
 fn more<'a, D>(request: &mut Request<D>, mut response: Response<'a, D>) -> MiddlewareResult<'a, D> {
-    let db = Db::new();
     let offset = request.query().get("offset").unwrap().parse::<usize>().unwrap();
 
     let images = match request.query().get("q") {
-        Some(x) =>  db.by_tags(25, offset, &x.to_lowercase().split_whitespace().map(String::from).collect::<Vec<_>>()).unwrap(),
-        None    =>  db.get_images(25, offset).unwrap()
+        Some(x) =>  DB.by_tags(25, offset, &x.to_lowercase().split_whitespace().map(String::from).collect::<Vec<_>>()).unwrap(),
+        None    =>  DB.get_images(25, offset).unwrap()
     };
 
     response.set(MediaType::Json);
@@ -92,10 +93,6 @@ macro_rules! routes(
 );
 
 fn main() {
-    /*let d = db::Db::new();
-    d.add_image("test.jpg", &vec!["Sas".to_string(), "Ses".to_string()], "e621", None, 's');
-    println!("{:?}", d.by_tags(25, 0, &["*es".to_string()]));*/
-
     let mut server = Nickel::new();
 
     server.utilize(StaticFilesHandler::new("assets"));

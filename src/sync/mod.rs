@@ -13,7 +13,7 @@ use std::fs::{File,read_dir,create_dir};
 use std::path::Path;
 use std::fmt::Display;
 
-use ::db::Db;
+pub use super::DB;
 
 use rustc_serialize::json::Json;
 
@@ -74,8 +74,7 @@ fn download(client: &Client, im: &Image, recv: &Receiver<()>) -> Result<(),()> {
     let mut body = Vec::new();
     res.read_to_end(&mut body).unwrap();
 
-    let db = Db::new();
-    db.add_image(&im.name, &im.tags, im.got_from.as_str(), im.post_url.as_str(), im.rating).unwrap();
+    DB.add_image(&im.name, &im.tags, im.got_from.as_str(), im.post_url.as_str(), im.rating).unwrap();
 
     save_image(Path::new("assets/images"), &im.name, &body);
 

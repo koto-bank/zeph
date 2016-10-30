@@ -5,15 +5,13 @@ use self::hyper::client::Client;
 use std::thread;
 use std::time::Duration;
 
-use ::db::Db;
-use super::{Image,download,req_and_parse};
+use super::{DB,Image,download,req_and_parse};
 
 use std::sync::mpsc::Receiver;
 
 pub fn main(rc: &Receiver<()>) {
-    let db = Db::new();
     let client = Client::new();
-    let images_c = db.get_images(None,0).unwrap();
+    let images_c = DB.get_images(None,0).unwrap();
     let mut url_string = "https://e621.net/post/index.json".to_string();
 
     'main: loop {

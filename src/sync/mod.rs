@@ -56,7 +56,7 @@ pub fn save_image(dir: &Path, name: &str, file: &[u8]) {
     let mut f = File::create(dir.join(name)).unwrap();
     let mut prevf = File::create(dir.join("preview").join(name)).unwrap();
 
-    f.write(&file).unwrap();
+    f.write(file).unwrap();
     prev.save(&mut prevf, image::JPEG).unwrap();
 }
 
@@ -77,7 +77,7 @@ fn download(client: &Client, im: &Image, recv: &Receiver<()>) -> Result<(),()> {
     let db = Db::new();
     db.add_image(&im.name, &im.tags, im.got_from.as_str(), im.post_url.as_str(), im.rating).unwrap();
 
-    save_image(&Path::new("assets/images"), &im.name, &body);
+    save_image(Path::new("assets/images"), &im.name, &body);
 
     print_success(&im.name);
 

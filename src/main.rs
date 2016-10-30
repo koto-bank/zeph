@@ -37,9 +37,9 @@ fn upload_image<'mw>(req: &mut Request, mut res: Response<'mw>) -> MiddlewareRes
                                 let tags = tags.split_whitespace().map(String::from).collect::<Vec<_>>();
                                 let mut body = Vec::new();
                                 let _ = File::open(&savedfile.path).unwrap().read_to_end(&mut body);
-                                let name = db.add_with_tags_name(&tags, filename.split(".").collect::<Vec<_>>()[1]).unwrap();
+                                let name = db.add_with_tags_name(&tags, filename.split('.').collect::<Vec<_>>()[1]).unwrap();
 
-                                save_image(&Path::new("assets/images"), &name, &body);
+                                save_image(Path::new("assets/images"), &name, &body);
 
                                 res.redirect("/")
 

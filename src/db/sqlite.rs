@@ -8,6 +8,12 @@ pub struct Db {
     db: rusqlite::Connection
 }
 
+impl Default for Db { // Чтобы Clippy не жаловался
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Db {
     pub fn new() -> Self {
         use self::rusqlite::Connection;

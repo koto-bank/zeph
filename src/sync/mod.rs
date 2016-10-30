@@ -1,5 +1,4 @@
 extern crate hyper;
-extern crate rustc_serialize;
 extern crate ansi_term;
 extern crate image;
 

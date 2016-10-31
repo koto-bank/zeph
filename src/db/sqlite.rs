@@ -4,9 +4,7 @@ use super::{Image,Tag,AnyWith,parse_tag};
 
 use self::rusqlite::{Result as SQLResult, Row};
 
-pub struct Db {
-    db: rusqlite::Connection
-}
+pub struct Db(rusqlite::Connection);
 
 impl Default for Db { // Чтобы Clippy не жаловался
     fn default() -> Self {
@@ -28,14 +26,12 @@ impl Db {
                     got_from TEXT,
                     original_link TEXT,
                     rating CHAR);",&[]).unwrap();
-        Db{
-            db: conn
-        }
+        Db(conn)
     }
 
     /// Сохранить картинку, сгенерировава имя из тэгов
     pub fn add_with_tags_name(&self, tags: &[String], ext: &str) -> SQLResult<String> {
-        let lastnum = self.db.query_row("SELECT id FROM images ORDER BY id DESC LIMIT 1", &[], |row| {
+        let lastnum = self.0.query_row("SELECT id FROM images ORDER BY id DESC LIMIT 1", &[], |row| {
             row.get::<i32,i32>(0)
         }).unwrap();
 
@@ -66,7 +62,7 @@ impl Db {
         values.push_str(")");
 
         let q = format!("{} {}", fields, values);
-        self.db.execute(&q, &[]).unwrap();
+        self.0.execute(&q, &[]).unwrap();
         Ok(())
     }
 
@@ -113,7 +109,7 @@ impl Db {
     }
 
     pub fn get_image(&self, id: i32) -> SQLResult<Image> {
-        self.db.query_row("SELECT * FROM images WHERE id = ?", &[&id], Db::extract_all)
+        self.0.query_row("SELECT * FROM images WHERE id = ?", &[&id], Db::extract_all)
     }
 
     pub fn get_images<T: Into<Option<i32>>>(&self, take: T, skip: usize) -> SQLResult<Vec<Image>>{
@@ -122,7 +118,7 @@ impl Db {
             None    => -1
         };
 
-        let mut st = self.db.prepare(&format!("SELECT * FROM images ORDER BY id DESC LIMIT {} OFFSET {}", take, skip))?;
+        let mut st = self.0.prepare(&format!("SELECT * FROM images ORDER BY id DESC LIMIT {} OFFSET {}", take, skip))?;
         let st = st.query_map(&[], Db::extract_all_ref)?.map(|x| x.unwrap());
         Ok(st.collect::<Vec<_>>())
     }
@@ -168,7 +164,7 @@ impl Db {
             None    => -1
         };
 
-        let mut st = self.db.prepare(&format!("SELECT * FROM images WHERE {} ORDER BY id DESC LIMIT {} OFFSET {}", q, take, skip))?;
+        let mut st = self.0.prepare(&format!("SELECT * FROM images WHERE {} ORDER BY id DESC LIMIT {} OFFSET {}", q, take, skip))?;
         let st = st.query_map(&[], Db::extract_all_ref)?.map(|x| x.unwrap());
         Ok(st.collect::<Vec<_>>())
     }

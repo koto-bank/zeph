@@ -25,6 +25,7 @@ pub fn main() {
                         "derpy" => { thread::spawn(move || sync::derpy::main(&recvr)); },
                         "e621"  => { thread::spawn(move || sync::e621::main(&recvr)); },
                         "dan"   => { thread::spawn(move || sync::danbooru::main(&recvr)); }
+                        "kona"  => { thread::spawn(move || sync::konachan::main(&recvr)); }
                         _       => println!("Error: function not found")
                     };
                     println!("ID: {}", id);

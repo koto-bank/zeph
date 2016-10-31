@@ -48,11 +48,15 @@ pub fn main(rc: &Receiver<()>) {
                 }}).collect::<Vec<_>>();
             let rating = rating.chars().collect::<Vec<_>>()[0];
             let url = format!("https:{}", image["image"].as_string().unwrap());
-            let name = image["file_name"].as_string().unwrap();
             let id = image["id"].as_string().unwrap().parse::<u64>().unwrap();
 
+            let ext = image["file_name"].as_string().unwrap().split('.').collect::<Vec<_>>();
+            let ext = ext.last().unwrap();
+            let name = format!("derpibooru_{}.{}", id, ext);
+
+
             acc.push(Image{
-                    name: format!("{}_{}",id,name),
+                    name: name,
                     got_from: "derpi".to_string(),
                     url: url,
                     tags: tags,

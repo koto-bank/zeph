@@ -12,7 +12,8 @@ use std::sync::mpsc::Receiver;
 pub fn main(rc: &Receiver<()>) {
     let client = Client::new();
     let images_c = DB.get_images(None,0).unwrap();
-    let mut url_string = "https://e621.net/post/index.json".to_string();
+    let mut url_string = "https://konachan.com/post.json".to_string();
+    let mut page = 1;
 
     'main: loop {
         let res = match req_and_parse(&client, &url_string) {
@@ -26,45 +27,42 @@ pub fn main(rc: &Receiver<()>) {
         let images = res.as_array().unwrap();
         if images.is_empty() { break }
 
-        let before_id = images[images.len()-1]
-            .as_object()
-            .map(|x| &x["id"])
-            .and_then(|x| x.as_u64())
-            .unwrap();
-
         let images = images.iter().fold(Vec::new(), |mut acc, x| {
             let image = x.as_object().unwrap();
             let tags = image["tags"].as_string().unwrap().split_whitespace().map(String::from).collect::<Vec<_>>();
             let rating = image["rating"].as_string().unwrap().chars().nth(0).unwrap();
 
-            let ext = image["file_ext"].as_string().unwrap();
-            if ext != "webm" && ext != "swf" && ext != "mp4" {
-                let url = image["file_url"].as_string().unwrap().to_string();
-                let id = image["id"].as_i64().unwrap();
-                let name = format!("e621_{}.{}", id, ext);
+            let url = image["file_url"].as_string().unwrap().to_string();
 
-                acc.push(Image{
-                    name: name.to_string(),
-                    got_from: "e621".to_string(),
-                    url: url,
-                    tags: tags,
-                    rating: rating,
-                    post_url: format!("https://e621.net/post/show/{}", id)
-                });
-                acc
-            } else {
-                acc
-            }
+            let ext = url.clone();
+            let ext = ext.split('.').collect::<Vec<_>>();
+            let ext = ext.last().unwrap();
+
+            let id = image["id"].as_i64().unwrap();
+
+            let name = format!("konachan_{}.{}", id, ext);
+
+            acc.push(Image{
+                name: name.to_string(),
+                got_from: "konachan".to_string(),
+                url: url,
+                tags: tags,
+                rating: rating,
+                post_url: format!("http://konachan.com/post/show/{}", id)
+            });
+            acc
         });
 
         for im in images {
             if !images_c.iter().any(|x| x.name == im.name ) {
-                if let Err(_) = download(&client, &im, rc) {
+                if let Err(_) = download(&Client::new(), &im, rc) { // Видимо, всё основанное на Danbooru не пускает с одного клиента
                     break 'main
                 }
             }
         }
 
-        url_string = format!("https://e621.net/post/index.json?before_id={}", before_id);
+        page += 1;
+
+        url_string = format!("https://konachan.com/post.json?page={}", page);
     }
 }

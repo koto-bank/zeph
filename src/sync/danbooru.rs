@@ -37,11 +37,8 @@ pub fn main(rc: &Receiver<()>) {
 
                 if ext != "webm" && ext != "swf" && ext != "mp4" {
                     let url = format!("http://danbooru.donmai.us{}", image["file_url"].as_string().unwrap().to_string());
-                    let name = url.clone();
-                    let name = name.split('/').collect::<Vec<_>>();
-                    let name = name[name.len()-1];
-
                     let id = image["id"].as_i64().unwrap();
+                    let name = format!("danbooru_{}.{}", id, ext);
 
                     acc.push(Image{
                         name: name.to_string(),

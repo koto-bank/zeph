@@ -33,6 +33,7 @@ pub struct Image {
 pub mod e621;
 pub mod derpy;
 pub mod danbooru;
+pub mod konachan;
 
 fn print_success<T: Display>(name: &T) {
     println!("{} {}", name, Green.paint("done"));

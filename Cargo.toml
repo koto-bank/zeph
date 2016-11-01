@@ -13,7 +13,7 @@ image = "*"
 lazy_static = "*"
 
 rusqlite = { version = "*", optional = true }
-postgres = { version = "*", optional = true, git = "https://github.com/TyanNN/rust-postgres"} # Временно, ждём пока обновят phf
+postgres = { version = "*", optional = true, git = "https://github.com/sfackler/rust-postgres"} 
 
 [features]
 default = ["postgresql"]

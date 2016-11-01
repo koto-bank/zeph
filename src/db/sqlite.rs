@@ -1,10 +1,13 @@
+#![cfg(feature = "sqlite")]
+
 extern crate rusqlite;
 
 use super::{Image,Tag,AnyWith,parse_tag};
 
-use self::rusqlite::{Result as SQLResult, Row};
+use self::rusqlite::{Result as SQLResult, Row, Connection};
+use std::path::Path;
 
-pub struct Db(rusqlite::Connection);
+pub struct Db(Connection);
 
 impl Default for Db { // Чтобы Clippy не жаловался
     fn default() -> Self {
@@ -14,9 +17,6 @@ impl Default for Db { // Чтобы Clippy не жаловался
 
 impl Db {
     pub fn new() -> Self {
-        use self::rusqlite::Connection;
-        use std::path::Path;
-
         let conn = Connection::open(Path::new("db.db")).unwrap();
         conn.execute("CREATE TABLE IF NOT EXISTS images(
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -64,48 +64,6 @@ impl Db {
         let q = format!("{} {}", fields, values);
         self.0.execute(&q, &[]).unwrap();
         Ok(())
-    }
-
-    fn extract_all(row: Row) -> Image {
-        let id = row.get(0);
-        let name = row.get(1);
-        let mut tags = row.get::<i32,String>(2).split(',').map(String::from).collect::<Vec<_>>();
-        let l = tags.len()-2;
-        tags.remove(0); tags.remove(l);
-
-        let got_from = row.get::<i32, Option<String>>(3).unwrap_or(" ".to_string());
-        let original_link = row.get::<i32,Option<String>>(4).unwrap_or(" ".to_string());
-        let rating = row.get::<i32,Option<String>>(5).unwrap_or(" ".to_string()).chars().nth(0).unwrap_or(' ');
-
-        Image{
-            id: id,
-            name: name,
-            tags: tags,
-            got_from: got_from,
-            original_link: original_link,
-            rating: rating
-        }
-    }
-
-    fn extract_all_ref(row: &Row) -> Image {
-        let id = row.get(0);
-        let name = row.get(1);
-        let mut tags = row.get::<i32,String>(2).split(',').map(String::from).collect::<Vec<_>>();
-        let l = tags.len()-2;
-        tags.remove(0); tags.remove(l);
-
-        let got_from = row.get::<i32, Option<String>>(3).unwrap_or(" ".to_string());
-        let original_link = row.get::<i32,Option<String>>(4).unwrap_or(" ".to_string());
-        let rating = row.get::<i32,Option<String>>(5).unwrap_or(" ".to_string()).chars().nth(0).unwrap_or(' ');
-
-        Image{
-            id: id,
-            name: name,
-            tags: tags,
-            got_from: got_from,
-            original_link: original_link,
-            rating: rating
-        }
     }
 
     pub fn get_image(&self, id: i32) -> SQLResult<Image> {
@@ -167,5 +125,47 @@ impl Db {
         let mut st = self.0.prepare(&format!("SELECT * FROM images WHERE {} ORDER BY id DESC LIMIT {} OFFSET {}", q, take, skip))?;
         let st = st.query_map(&[], Db::extract_all_ref)?.map(|x| x.unwrap());
         Ok(st.collect::<Vec<_>>())
+    }
+
+    fn extract_all(row: Row) -> Image {
+        let id = row.get(0);
+        let name = row.get(1);
+        let mut tags = row.get::<i32,String>(2).split(',').map(String::from).collect::<Vec<_>>();
+        let l = tags.len()-2;
+        tags.remove(0); tags.remove(l);
+
+        let got_from = row.get::<i32, Option<String>>(3).unwrap_or(" ".to_string());
+        let original_link = row.get::<i32,Option<String>>(4).unwrap_or(" ".to_string());
+        let rating = row.get::<i32,Option<String>>(5).unwrap_or(" ".to_string()).chars().nth(0).unwrap_or(' ');
+
+        Image{
+            id: id,
+            name: name,
+            tags: tags,
+            got_from: got_from,
+            original_link: original_link,
+            rating: rating
+        }
+    }
+
+    fn extract_all_ref(row: &Row) -> Image {
+        let id = row.get(0);
+        let name = row.get(1);
+        let mut tags = row.get::<i32,String>(2).split(',').map(String::from).collect::<Vec<_>>();
+        let l = tags.len()-2;
+        tags.remove(0); tags.remove(l);
+
+        let got_from = row.get::<i32, Option<String>>(3).unwrap_or(" ".to_string());
+        let original_link = row.get::<i32,Option<String>>(4).unwrap_or(" ".to_string());
+        let rating = row.get::<i32,Option<String>>(5).unwrap_or(" ".to_string()).chars().nth(0).unwrap_or(' ');
+
+        Image{
+            id: id,
+            name: name,
+            tags: tags,
+            got_from: got_from,
+            original_link: original_link,
+            rating: rating
+        }
     }
 }

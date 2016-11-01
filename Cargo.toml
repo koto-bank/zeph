@@ -9,6 +9,13 @@ nickel = "*"
 rustc-serialize = "*"
 hyper = "*"
 ansi_term = "*"
-rusqlite = "*"
 image = "*"
 lazy_static = "*"
+
+rusqlite = { version = "*", optional = true }
+postgres = { version = "*", optional = true, git = "https://github.com/TyanNN/rust-postgres"} # Временно, ждём пока обновят phf
+
+[features]
+default = ["postgresql"]
+sqlite = ["rusqlite"]
+postgresql = ["postgres"]

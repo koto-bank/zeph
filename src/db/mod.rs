@@ -23,9 +23,14 @@ enum Tag {
     From(Vec<String>)
 }
 
+pub mod postgres;
 mod sqlite;
 
+#[cfg(feature = "sqlite")]
 pub use self::sqlite::Db;
+
+#[cfg(feature = "postgresql")]
+pub use self::postgres::Db;
 
 unsafe impl Sync for Db {}
 

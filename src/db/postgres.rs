@@ -16,10 +16,11 @@ impl Default for Db { // Чтобы Clippy не жаловался
 }
 
 static POSTGRES_LOGIN : &'static str = "easy";
+static POSTGRES_PASS : &'static str = "";
 
 impl Db {
     pub fn new() -> Self {
-        let conn = Connection::connect(format!("postgres://{}@localhost", POSTGRES_LOGIN), TlsMode::None).unwrap();
+        let conn = Connection::connect(format!("postgres://{}:{}@localhost", POSTGRES_LOGIN, POSTGRES_PASS), TlsMode::None).unwrap();
         conn.execute("CREATE TABLE IF NOT EXISTS images(
                      id SERIAL PRIMARY KEY,
                      name TEXT NOT NULL UNIQUE,

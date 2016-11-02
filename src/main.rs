@@ -24,7 +24,11 @@ use db::Db;
 use sync::save_image;
 
 fn index_n_search<'a, D>(_request: &mut Request<D>, response: Response<'a, D>) -> MiddlewareResult<'a, D> {
-    response.send(include_str!("templates/index.html"))
+    response.render("src/templates/index.html", &[0]) // Вот тут и ниже так надо, чтобы не пересобирать программу при изменении HTML
+}
+
+fn show<'a, D>(_request: &mut Request<D>, response: Response<'a, D>) -> MiddlewareResult<'a, D> {
+    response.render("src/templates/show.html", &[0])
 }
 
 lazy_static! {
@@ -58,10 +62,6 @@ fn upload_image<'mw>(req: &mut Request, mut res: Response<'mw>) -> MiddlewareRes
         res.set(nickel::status::StatusCode::BadRequest);
         res.send("Not a multipart request")
     }
-}
-
-fn show<'a, D>(_request: &mut Request<D>, response: Response<'a, D>) -> MiddlewareResult<'a, D> {
-    response.send(include_str!("templates/show.html"))
 }
 
 fn get_image<'a, D>(request: &mut Request<D>, mut response: Response<'a, D>) -> MiddlewareResult<'a, D> {

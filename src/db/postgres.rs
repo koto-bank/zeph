@@ -45,7 +45,7 @@ impl Db {
     pub fn add_image<'a, T1: Into<Option<&'a str>>,
     T2: Into<Option<&'a str>>,
     C: Into<Option<char>>>(&self, name: &str, tags: &[String], got_from: T1, original_link: T2, rating: C) -> SQLResult<()> {
-        self.0.execute("INSERT into images (name,tags,got_from,original_link,rating) VALUES ($1,$2,$3,$4,$5)",
+        self.0.execute("INSERT into images (name,tags,got_from,original_link,rating) VALUES ($1,$2,$3,$4,$5) ON CONFLICT (name) DO UPDATE SET tags = $2",
         &[&name,&tags,&got_from.into(), &original_link.into(),&rating.into().map(|x| x.to_string())]).unwrap();
         Ok(())
     }

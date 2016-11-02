@@ -1,16 +1,12 @@
 extern crate hyper;
-extern crate ansi_term;
 extern crate image;
-
-use self::ansi_term::Color::{Green, Red};
 
 use self::hyper::client::Client;
 use self::hyper::header::UserAgent;
 
 use std::io::{Read,Write};
-use std::fs::{File,read_dir,create_dir};
+use std::fs::{File,OpenOptions,read_dir,create_dir};
 use std::path::Path;
-use std::fmt::Display;
 
 pub use super::DB;
 
@@ -35,14 +31,6 @@ pub mod derpy;
 pub mod danbooru;
 pub mod konachan;
 
-fn print_success<T: Display>(name: &T) {
-    println!("{} {}", name, Green.paint("done"));
-}
-
-fn print_err<T: Display>(err: &T) {
-    println!("{}: {}", Red.paint("ERROR"), err);
-}
-
 /// Сохраняет картинку & создаёт к ней превью
 pub fn save_image(dir: &Path, name: &str, file: &[u8]) {
     if let Err(_) = read_dir("assets/images") {
@@ -63,6 +51,8 @@ pub fn save_image(dir: &Path, name: &str, file: &[u8]) {
 
 /// Качает картинку, прерываясь, если из консоли поступил kill
 fn download(client: &Client, im: &Image, recv: &Receiver<()>) -> Result<(),()> {
+    let mut outf = OpenOptions::new().append(true).create(true).open("OUTPUT").unwrap();
+
     match recv.try_recv() {
         Ok(_) | Err(TryRecvError::Disconnected) => {
             return Err(());
@@ -80,19 +70,20 @@ fn download(client: &Client, im: &Image, recv: &Receiver<()>) -> Result<(),()> {
 
     save_image(Path::new("assets/images"), &im.name, &body);
 
-    print_success(&im.name);
+    writeln!(&mut outf, "{} DONE", im.name).unwrap();
 
     Ok(())
 }
 
 /// Запросить и распарсить JSON
 fn req_and_parse(client: &Client, url: &str) -> Result<Json, hyper::Error> {
+    let mut outf = OpenOptions::new().append(true).create(true).open("OUTPUT").unwrap();
     let mut res = match client.get(url)
         .header(UserAgent("Zeph/1.0".to_owned()))
         .send() {
             Ok(x)   => x,
             Err(x)  => {
-                print_err(&x);
+                writeln!(&mut outf, "ERROR: {}", x).unwrap();
                 return Err(x)
             }
         };

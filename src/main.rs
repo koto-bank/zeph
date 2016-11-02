@@ -18,7 +18,7 @@ use rustc_serialize::json;
 
 mod db;
 mod sync;
-mod console;
+mod commands;
 
 use db::Db;
 use sync::save_image;
@@ -106,7 +106,7 @@ fn main() {
         post "/upload_image" => upload_image
     };
 
-    thread::spawn(console::main);
+    thread::spawn(commands::main);
 
     let _server = server.listen("127.0.0.1:3000");
 }

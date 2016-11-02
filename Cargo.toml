@@ -8,7 +8,6 @@ multipart = { version = "*", features = [ "nickel_" ] }
 nickel = "*"
 rustc-serialize = "*"
 hyper = "*"
-ansi_term = "*"
 image = "*"
 lazy_static = "*"
 

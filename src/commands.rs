@@ -1,6 +1,9 @@
-use std::io::{self,Write};
+use std::io::{Read,Write};
 use std::sync::mpsc;
 use std::thread;
+use std::fs::{remove_file, File, OpenOptions};
+
+use std::time::Duration;
 
 use ::sync;
 
@@ -11,11 +14,14 @@ pub fn main() {
     let mut id = 0;
 
     loop {
-        print!("> ");
-        let _ = io::stdout().flush();
+        let mut inf = OpenOptions::new().read(true).write(true).create(true).open("INPUT").unwrap();
+        let mut outf = OpenOptions::new().append(true).create(true).open("OUTPUT").unwrap();
 
-        let mut input = String::new();
-        if let Ok(_) = io::stdin().read_line(&mut input) {
+        let mut inputs = String::new();
+        inf.read_to_string(&mut inputs).unwrap();
+        let inputs = inputs.split("\n").collect::<Vec<_>>();
+
+        for input in inputs {
             let input = input.trim();
             if input.starts_with("sync") {
                 if let Some(func) = input.split_whitespace().collect::<Vec<_>>().get(1) {
@@ -26,23 +32,25 @@ pub fn main() {
                         "e621"  => { thread::spawn(move || sync::e621::main(&recvr)); },
                         "dan"   => { thread::spawn(move || sync::danbooru::main(&recvr)); }
                         "kona"  => { thread::spawn(move || sync::konachan::main(&recvr)); }
-                        _       => println!("Error: function not found")
+                        _       => { writeln!(&mut outf, "Error: function not found").unwrap(); }
                     };
-                    println!("ID: {}", id);
+                    writeln!(&mut outf, "ID: {}", id).unwrap();
                     id += 1;
-                } else { println!("Use sync <name>") }
+                } else { writeln!(&mut outf, "Use sync <name>").unwrap(); }
             } else if input.starts_with("kill") {
                 if let Some(input) = input.split_whitespace().collect::<Vec<_>>().get(1) {
                     if let Ok(id) = input.parse::<u32>() {
                         match senders.clone().get(&id) {
-                            Some(sender) => { let _ = sender.send(()); senders.remove(&id); println!("Killed {}", id); },
-                            None => println!("Error: No such id")
+                            Some(sender) => { let _ = sender.send(()); senders.remove(&id); writeln!(&mut outf, "Killed {}", id).unwrap(); },
+                            None => { writeln!(&mut outf ,"Error: No such id").unwrap(); }
                         }
                     }
-                } else {
-                    println!("Use kill <id>");
                 }
             }
         }
+
+        remove_file("INPUT").unwrap();
+        File::create("INPUT").unwrap();
+        thread::sleep(Duration::new(15,0));
     }
 }

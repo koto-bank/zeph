@@ -1,0 +1,8 @@
+target
+Cargo.lock
+assets/images
+database
+db.db
+*.swp
+INPUT
+OUTPUT

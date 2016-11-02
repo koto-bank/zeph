@@ -5,13 +5,12 @@ use self::hyper::client::Client;
 use std::thread;
 use std::time::Duration;
 
-use super::{DB,Image,download,req_and_parse};
+use super::{Image,process_downloads,req_and_parse};
 
 use std::sync::mpsc::Receiver;
 
 pub fn main(rc: &Receiver<()>) {
     let client = Client::new();
-    let images_c = DB.get_images(None,0).unwrap();
     let mut url_string = "https://e621.net/post/index.json".to_string();
 
     'main: loop {
@@ -57,12 +56,8 @@ pub fn main(rc: &Receiver<()>) {
             }
         });
 
-        for im in images {
-            if !images_c.iter().any(|x| x.name == im.name ) {
-                if let Err(_) = download(&client, &im, rc) {
-                    break 'main
-                }
-            }
+        if let Err(_) = process_downloads(&client, &images, &rc) {
+            break 'main
         }
 
         url_string = format!("https://e621.net/post/index.json?before_id={}", before_id);

@@ -5,13 +5,12 @@ use self::hyper::client::Client;
 use std::thread;
 use std::time::Duration;
 
-use super::{DB,Image,download,req_and_parse};
+use super::{Image,process_downloads,req_and_parse};
 
 use std::sync::mpsc::Receiver;
 
 pub fn main(rc: &Receiver<()>) {
     let client = Client::new();
-    let images_c = DB.get_images(None,0).unwrap();
     let mut url_string = "http://danbooru.donmai.us/posts.json".to_string();
     let mut page = 1;
 
@@ -53,12 +52,8 @@ pub fn main(rc: &Receiver<()>) {
             acc
         });
 
-        for im in images {
-            if !images_c.iter().any(|x| x.name == im.name ) {
-                if let Err(_) = download(&Client::new(), &im, rc) { //Вот это бред какой-то, но danbooru не даёт качать две картинки подряд
-                    break 'main
-                }
-            }
+        if let Err(_) = process_downloads(&client, &images, &rc) {
+            break 'main
         }
 
         page += 1;

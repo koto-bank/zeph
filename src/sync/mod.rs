@@ -49,16 +49,41 @@ pub fn save_image(dir: &Path, name: &str, file: &[u8]) {
     prev.save(&mut prevf, image::JPEG).unwrap();
 }
 
-/// Качает картинку, прерываясь, если из консоли поступил kill
-fn download(client: &Client, im: &Image, recv: &Receiver<()>) -> Result<(),()> {
+fn process_downloads(client: &Client, images: &[Image], recv: &Receiver<()>) -> Result<(),()> {
+    let images_c = DB.get_images(None,0).unwrap();
     let mut outf = OpenOptions::new().append(true).create(true).open("OUTPUT").unwrap();
 
-    match recv.try_recv() {
-        Ok(_) | Err(TryRecvError::Disconnected) => {
-            return Err(());
+    for im in images {
+        match recv.try_recv() {
+            Ok(_) | Err(TryRecvError::Disconnected) => {
+                return Err(());
+            }
+            Err(TryRecvError::Empty) => {}
         }
-        Err(TryRecvError::Empty) => {}
+
+        if !images_c.iter().any(|x| x.name == im.name ) {
+            if im.got_from == "konachan" || im.got_from == "danbooru" {
+                download(&Client::new(), im)?;
+            } else {
+                download(client, im)?;
+            }
+        } else {
+            let mut m_tags = images_c.iter().find(|x| x.name == im.name ).unwrap().tags.clone();
+            let mut curr_tags = im.tags.clone();
+            m_tags.dedup();
+            curr_tags.dedup();
+            if m_tags != curr_tags {
+                DB.add_image(&im.name, &im.tags, im.got_from.as_str(), im.post_url.as_str(), im.rating).unwrap();
+                writeln!(&mut outf, "UPDATE tags on {}", im.name).unwrap();
+            }
+        }
     }
+    Ok(())
+}
+
+/// Качает картинку, прерываясь, если из консоли поступил kill
+fn download(client: &Client, im: &Image) -> Result<(),()> {
+    let mut outf = OpenOptions::new().append(true).create(true).open("OUTPUT").unwrap();
 
     let mut res = client.get(&im.url)
         .header(UserAgent("Zeph/1.0".to_owned()))

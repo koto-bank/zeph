@@ -14,7 +14,7 @@ pub fn main(rc: &Receiver<()>) {
     let mut url_string = "https://konachan.com/post.json?limit=100".to_string();
     let mut page = 1;
 
-    'main: loop {
+    loop {
         let res = match req_and_parse(&client, &url_string) {
             Ok(x) => x,
             Err(_) => {
@@ -53,7 +53,7 @@ pub fn main(rc: &Receiver<()>) {
         });
 
         if let Err(_) = process_downloads(&client, &images, &rc) {
-            break 'main
+            break
         }
 
         page += 1;

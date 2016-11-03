@@ -14,7 +14,7 @@ pub fn main(rc: &Receiver<()>) {
     let mut url_string = "https://derpibooru.org/search.json?q=score.gt:0&filter_id=56027".to_string();
     let mut page = 1;
 
-    'main: loop {
+    loop {
         let res = match req_and_parse(&client, &url_string) {
             Ok(x) => x,
             Err(_) => {
@@ -66,7 +66,7 @@ pub fn main(rc: &Receiver<()>) {
         });
 
         if let Err(_) = process_downloads(&client, &images, &rc) {
-            break 'main
+            break
         }
 
         page += 1;

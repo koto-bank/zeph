@@ -11,7 +11,7 @@ use std::sync::mpsc::Receiver;
 
 pub fn main(rc: &Receiver<()>) {
     let client = Client::new();
-    let mut url_string = "http://danbooru.donmai.us/posts.json".to_string();
+    let mut url_string = "http://danbooru.donmai.us/posts.json?limit=100".to_string();
     let mut page = 1;
 
     'main: loop {
@@ -58,6 +58,6 @@ pub fn main(rc: &Receiver<()>) {
 
         page += 1;
 
-        url_string = format!("http://danbooru.donmai.us/posts.json?page={}", page);
+        url_string = format!("http://danbooru.donmai.us/posts.json?page={}&limit=100", page);
     }
 }

@@ -80,6 +80,8 @@ fn process_downloads(client: &Client, images: &[Image], recv: &Receiver<()>) -> 
             if m_tags != curr_tags {
                 DB.lock().unwrap().add_image(&im.name, &im.tags, im.got_from.as_str(), im.post_url.as_str(), im.rating).unwrap();
                 writeln!(&mut outf, "UPDATE tags on {}", im.name).unwrap();
+            } else {
+                writeln!(&mut outf, "ALREADY DONE {}", im.name).unwrap();
             }
         }
     }

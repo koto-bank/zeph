@@ -95,7 +95,7 @@ fn download(client: &Client, im: &Image) -> Result<(),()> {
 
     save_image(Path::new("assets/images"), &im.name, &body);
 
-    writeln!(&mut outf, "{} DONE", im.name).unwrap();
+    writeln!(&mut outf, "DONE {}", im.name).unwrap();
 
     Ok(())
 }

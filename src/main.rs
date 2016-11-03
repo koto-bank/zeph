@@ -31,8 +31,10 @@ fn show<'a, D>(_request: &mut Request<D>, response: Response<'a, D>) -> Middlewa
     response.render("src/templates/show.html", &[0])
 }
 
+use std::sync::Mutex;
+
 lazy_static! {
-    pub static ref DB : Db = Db::new();
+    pub static ref DB : Mutex<Db> = Mutex::new(Db::new());
 }
 
 fn upload_image<'mw>(req: &mut Request, mut res: Response<'mw>) -> MiddlewareResult<'mw> {
@@ -45,7 +47,7 @@ fn upload_image<'mw>(req: &mut Request, mut res: Response<'mw>) -> MiddlewareRes
                                 let tags = tags.split_whitespace().map(String::from).collect::<Vec<_>>();
                                 let mut body = Vec::new();
                                 let _ = File::open(&savedfile.path).unwrap().read_to_end(&mut body);
-                                let name = DB.add_with_tags_name(&tags, filename.split('.').collect::<Vec<_>>()[1]).unwrap();
+                                let name = DB.lock().unwrap().add_with_tags_name(&tags, filename.split('.').collect::<Vec<_>>()[1]).unwrap();
 
                                 save_image(Path::new("assets/images"), &name, &body);
 
@@ -67,15 +69,15 @@ fn upload_image<'mw>(req: &mut Request, mut res: Response<'mw>) -> MiddlewareRes
 fn get_image<'a, D>(request: &mut Request<D>, mut response: Response<'a, D>) -> MiddlewareResult<'a, D> {
     let id = request.param("id").unwrap().parse::<i32>().unwrap();
     response.set(MediaType::Json);
-    response.send(json::encode(&DB.get_image(id).unwrap()).unwrap())
+    response.send(json::encode(&DB.lock().unwrap().get_image(id).unwrap()).unwrap())
 }
 
 fn more<'a, D>(request: &mut Request<D>, mut response: Response<'a, D>) -> MiddlewareResult<'a, D> {
     let offset = request.query().get("offset").unwrap().parse::<usize>().unwrap();
 
     let images = match request.query().get("q") {
-        Some(x) =>  DB.by_tags(25, offset, &x.to_lowercase().split_whitespace().map(String::from).collect::<Vec<_>>()).unwrap(),
-        None    =>  DB.get_images(25, offset).unwrap()
+        Some(x) =>  DB.lock().unwrap().by_tags(25, offset, &x.to_lowercase().split_whitespace().map(String::from).collect::<Vec<_>>()).unwrap(),
+        None    =>  DB.lock().unwrap().get_images(25, offset).unwrap()
     };
 
     response.set(MediaType::Json);

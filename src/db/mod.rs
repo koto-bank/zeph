@@ -32,8 +32,6 @@ pub use self::sqlite::Db;
 #[cfg(feature = "postgresql")]
 pub use self::postgres::Db;
 
-unsafe impl Sync for Db {}
-
 fn parse_tag(tag: &str) -> Tag {
     if tag.starts_with("rating") {
         let tag = tag.split("rating:").collect::<Vec<_>>()[1];

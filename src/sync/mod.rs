@@ -50,7 +50,7 @@ pub fn save_image(dir: &Path, name: &str, file: &[u8]) {
 }
 
 fn process_downloads(client: &Client, images: &[Image], recv: &Receiver<()>) -> Result<(),()> {
-    let images_c = DB.get_images(None,0).unwrap();
+    let images_c = DB.lock().unwrap().get_images(None,0).unwrap();
     let mut outf = OpenOptions::new().append(true).create(true).open("OUTPUT").unwrap();
 
     for im in images {
@@ -73,7 +73,7 @@ fn process_downloads(client: &Client, images: &[Image], recv: &Receiver<()>) -> 
             m_tags.dedup();
             curr_tags.dedup();
             if m_tags != curr_tags {
-                DB.add_image(&im.name, &im.tags, im.got_from.as_str(), im.post_url.as_str(), im.rating).unwrap();
+                DB.lock().unwrap().add_image(&im.name, &im.tags, im.got_from.as_str(), im.post_url.as_str(), im.rating).unwrap();
                 writeln!(&mut outf, "UPDATE tags on {}", im.name).unwrap();
             }
         }
@@ -91,7 +91,7 @@ fn download(client: &Client, im: &Image) -> Result<(),()> {
     let mut body = Vec::new();
     res.read_to_end(&mut body).unwrap();
 
-    DB.add_image(&im.name, &im.tags, im.got_from.as_str(), im.post_url.as_str(), im.rating).unwrap();
+    DB.lock().unwrap().add_image(&im.name, &im.tags, im.got_from.as_str(), im.post_url.as_str(), im.rating).unwrap();
 
     save_image(Path::new("assets/images"), &im.name, &body);
 

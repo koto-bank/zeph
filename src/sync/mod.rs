@@ -49,9 +49,21 @@ pub fn save_image(dir: &Path, name: &str, file: &[u8]) {
     prev.save(&mut prevf, image::JPEG).unwrap();
 }
 
+fn arr_eq<T: PartialEq>(first: &mut Vec<T>, second: &mut Vec<T>) -> bool {
+    first.dedup();
+    second.dedup();
+    first == second
+}
+
 fn process_downloads(client: &Client, images: &[Image], recv: &Receiver<()>) -> Result<(),()> {
     let images_c = DB.lock().unwrap().get_images(None,0).unwrap();
     let mut outf = OpenOptions::new().append(true).create(true).open("OUTPUT").unwrap();
+
+    let mut printed = false;
+    if arr_eq(&mut images.iter().map(|x| x.name.clone()).collect::<Vec<_>>(), &mut images_c.iter().map(|x| x.name.clone()).collect::<Vec<_>>()) {
+        writeln!(&mut outf, "ALREADY DONE {} ~ {}", images.first().unwrap().name, images.last().unwrap().name).unwrap();
+        printed = true;
+    }
 
     for im in images {
         match recv.try_recv() {
@@ -74,14 +86,14 @@ fn process_downloads(client: &Client, images: &[Image], recv: &Receiver<()>) -> 
             }
         } else {
             let mut m_tags = images_c.iter().find(|x| x.name == im.name ).unwrap().tags.clone();
-            let mut curr_tags = im.tags.clone();
-            m_tags.dedup();
-            curr_tags.dedup();
-            if m_tags != curr_tags {
+
+            if !arr_eq(&mut m_tags, &mut im.tags.clone()) {
                 DB.lock().unwrap().add_image(&im.name, &im.tags, im.got_from.as_str(), im.post_url.as_str(), im.rating).unwrap();
                 writeln!(&mut outf, "UPDATE tags on {}", im.name).unwrap();
             } else {
-                writeln!(&mut outf, "ALREADY DONE {}", im.name).unwrap();
+                if !printed {
+                    writeln!(&mut outf, "ALREADY DONE {}", im.name).unwrap();
+                }
             }
         }
     }

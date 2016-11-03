@@ -1,7 +1,7 @@
 use std::io::{Read,Write};
 use std::sync::mpsc;
 use std::thread;
-use std::fs::{remove_file, File, OpenOptions};
+use std::fs::{OpenOptions};
 
 use std::time::Duration;
 
@@ -49,8 +49,7 @@ pub fn main() {
             }
         }
 
-        remove_file("INPUT").unwrap();
-        File::create("INPUT").unwrap();
+        inf.set_len(0).unwrap();
         thread::sleep(Duration::new(15,0));
     }
 }

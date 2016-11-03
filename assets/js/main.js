@@ -35,6 +35,7 @@ function loadMore() {
         body.forEach(function(image) {
             var link = document.createElement("a");
             link.href = "/show/"+image.id;
+            link.target = "_blank";
             var im = document.createElement("div");
             im.title = image.tags.join(" ");
             im.className = "thumbnail";

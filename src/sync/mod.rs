@@ -62,10 +62,15 @@ fn process_downloads(client: &Client, images: &[Image], recv: &Receiver<()>) -> 
         }
 
         if !images_c.iter().any(|x| x.name == im.name ) {
-            if im.got_from == "konachan" || im.got_from == "danbooru" {
-                download(&Client::new(), im)?;
+            if let Err(er) = if im.got_from == "konachan" || im.got_from == "danbooru" {
+                download(&Client::new(), im)
             } else {
-                download(client, im)?;
+                download(client, im)
+            } {
+                writeln!(&mut outf, "ERROR: {}; SKIP", er).unwrap();
+                continue
+            } else {
+                writeln!(&mut outf, "DONE {}", im.name).unwrap();
             }
         } else {
             let mut m_tags = images_c.iter().find(|x| x.name == im.name ).unwrap().tags.clone();
@@ -82,20 +87,17 @@ fn process_downloads(client: &Client, images: &[Image], recv: &Receiver<()>) -> 
 }
 
 /// Качает картинку, прерываясь, если из консоли поступил kill
-fn download(client: &Client, im: &Image) -> Result<(),()> {
-    let mut outf = OpenOptions::new().append(true).create(true).open("OUTPUT").unwrap();
-
+fn download(client: &Client, im: &Image) -> Result<(), hyper::Error> {
     let mut res = client.get(&im.url)
         .header(UserAgent("Zeph/1.0".to_owned()))
-        .send().unwrap();
+        .send()?;
+
     let mut body = Vec::new();
     res.read_to_end(&mut body).unwrap();
 
     DB.lock().unwrap().add_image(&im.name, &im.tags, im.got_from.as_str(), im.post_url.as_str(), im.rating).unwrap();
 
     save_image(Path::new("assets/images"), &im.name, &body);
-
-    writeln!(&mut outf, "DONE {}", im.name).unwrap();
 
     Ok(())
 }

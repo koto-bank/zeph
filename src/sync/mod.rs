@@ -55,12 +55,26 @@ fn arr_eq<T: PartialEq>(first: &mut Vec<T>, second: &mut Vec<T>) -> bool {
     first == second
 }
 
+
+// Включает ли второй массив первый
+fn includes<T: PartialEq>(first: &[T], second: &[T]) -> bool {
+    let r = first.len();
+    let mut c = 0;
+    for f in first {
+        if second.iter().any(|x| x == f) {
+            c += 1;
+        }
+    }
+
+    r == c
+}
+
 fn process_downloads(client: &Client, images: &[Image], recv: &Receiver<()>) -> Result<(),()> {
     let images_c = DB.lock().unwrap().get_images(None,0).unwrap();
     let mut outf = OpenOptions::new().append(true).create(true).open("OUTPUT").unwrap();
 
     let mut printed = false;
-    if arr_eq(&mut images.iter().map(|x| x.name.clone()).collect::<Vec<_>>(), &mut images_c.iter().map(|x| x.name.clone()).collect::<Vec<_>>()) {
+    if includes(&images.iter().map(|x| x.name.clone()).collect::<Vec<_>>(), &images_c.iter().map(|x| x.name.clone()).collect::<Vec<_>>()) {
         writeln!(&mut outf, "ALREADY DONE {} ~ {}", images.first().unwrap().name, images.last().unwrap().name).unwrap();
         printed = true;
     }

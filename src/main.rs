@@ -118,6 +118,24 @@ fn more<'a, D>(request: &mut Request<D>, mut response: Response<'a, D>) -> Middl
     response.send(json::encode(&images).unwrap())
 }
 
+fn adduser<'a, D>(request: &mut Request<D>, mut response: Response<'a, D>) -> MiddlewareResult<'a, D> {
+    let body = try_with!(response, request.form_body());
+    if let (Some(login), Some(pass)) = (body.get("login"), body.get("password")) {
+        if let Ok(res) = DB.lock().unwrap().add_user(&login,&pass) {
+            if res {
+                response.set_jwt_user(login);
+                response.redirect("/")
+            } else {
+                response.send("User already exists")
+            }
+        } else {
+            response.error(StatusCode::InternalServerError, "Internal server error")
+        }
+    } else {
+        response.send("No data")
+    }
+}
+
 fn login<'a, D>(request: &mut Request<D>, mut response: Response<'a, D>) -> MiddlewareResult<'a, D> {
     let body = try_with!(response, request.form_body());
     if let (Some(login), Some(pass)) = (body.get("login"), body.get("password")) {
@@ -166,7 +184,8 @@ fn main() {
         get "/user_status" => user_status,
 
         post "/upload_image" => upload_image,
-        post "/login" => login
+        post "/login" => login,
+        post "/adduser" => adduser
     };
 
     thread::spawn(commands::main);

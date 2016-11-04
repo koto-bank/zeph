@@ -84,6 +84,7 @@ function drawUploadOrLogin() {
                 action: "/login",
                 method: "POST"
             });
+
             var login = document.createElement("input")
             setAttrs(login,{
                 type: "text",
@@ -101,6 +102,23 @@ function drawUploadOrLogin() {
                 type: "submit",
                 value: "Login"
             });
+
+            var lor = document.createElement("button");
+            lor.textContent = "Sign up";
+            lor.onclick = function() {
+                if (lor.textContent == "Sign up") {
+                    lor.textContent = "Sign in"
+                    sbm.value = "Register"
+                    form.action = "/adduser"
+                } else {
+                    lor.textContent = "Sign up"
+                    sbm.value = "Login"
+                    form.action = "/login"
+                }
+            }
+
+            main_form.appendChild(lor);
+
             form.appendChild(login);
             form.appendChild(pass);
             form.appendChild(sbm);

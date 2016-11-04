@@ -141,11 +141,16 @@ impl Db {
            }))
     }
 
-    pub fn add_user(&self, login: &str, pass: &str) -> SQLResult<()> {
-        let pass = scrypt_simple(pass, &SCRYPT_PARAMS).unwrap();
+    // true - всё хорошо, false - пользователь уже существует
+    pub fn add_user(&self, login: &str, pass: &str) -> SQLResult<bool> {
+        if self.0.query("SELECT * FROM users WHERE name = $1", &[&login])?.len() == 0 && login.to_lowercase() != "sync" {
+            let pass = scrypt_simple(pass, &SCRYPT_PARAMS).unwrap();
 
-        self.0.execute("INSERT INTO users (name,pass) VALUES ($1,$2)", &[&login, &pass])?;
-        Ok(())
+            self.0.execute("INSERT INTO users (name,pass) VALUES ($1,$2)", &[&login, &pass])?;
+            Ok(true)
+        } else {
+            Ok(false)
+        }
     }
 
     ///Result показывает ошибки в базе, Option - существует пользователь или нет

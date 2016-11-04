@@ -3,9 +3,23 @@
 
 extern crate rustc_serialize;
 extern crate multipart;
+extern crate nickel_jwt_session;
+extern crate time;
 
-use nickel::{Nickel, Request, Response, MiddlewareResult, HttpRouter, StaticFilesHandler, QueryString, MediaType};
+use nickel::{Nickel,
+            Request,
+            Response,
+            MiddlewareResult,
+            HttpRouter,
+            StaticFilesHandler,
+            QueryString,
+            MediaType,
+            FormBody};
+
+
 use nickel::extensions::Redirect;
+
+use nickel_jwt_session::*;
 
 use std::fs::File;
 use std::path::Path;
@@ -23,18 +37,29 @@ mod commands;
 use db::Db;
 use sync::save_image;
 
+use std::sync::Mutex;
+
+lazy_static! {
+    pub static ref DB : Mutex<Db> = Mutex::new(Db::new());
+}
+
+
+macro_rules! routes(
+    { $serv:ident, $($method:ident $($path:expr),+ => $fun:ident),+ } => {
+        {
+            $($(
+                    $serv.$method($path, $fun);
+               )+)+
+        }
+     };
+);
+
 fn index_n_search<'a, D>(_request: &mut Request<D>, response: Response<'a, D>) -> MiddlewareResult<'a, D> {
     response.render("src/templates/index.html", &[0]) // Вот тут и ниже так надо, чтобы не пересобирать программу при изменении HTML
 }
 
 fn show<'a, D>(_request: &mut Request<D>, response: Response<'a, D>) -> MiddlewareResult<'a, D> {
     response.render("src/templates/show.html", &[0])
-}
-
-use std::sync::Mutex;
-
-lazy_static! {
-    pub static ref DB : Mutex<Db> = Mutex::new(Db::new());
 }
 
 fn upload_image<'mw>(req: &mut Request, mut res: Response<'mw>) -> MiddlewareResult<'mw> {
@@ -84,6 +109,26 @@ fn more<'a, D>(request: &mut Request<D>, mut response: Response<'a, D>) -> Middl
     response.send(json::encode(&images).unwrap())
 }
 
+fn login<'a, D>(request: &mut Request<D>, mut response: Response<'a, D>) -> MiddlewareResult<'a, D> {
+    let body = try_with!(response, request.form_body());
+    if let (Some(login), Some(pass)) = (body.get("login"), body.get("password")) {
+        match DB.lock().unwrap().check_user(login, pass) {
+            Ok(x) => match x {
+                Some(x) => if x {
+                    response.set_jwt_user(login);
+                    response.redirect("/")
+                } else {
+                    response.send("Incorrent password")
+                },
+                _   => response.send("No such user")
+            },
+            Err(e) =>  panic!(e)
+        }
+    } else {
+        response.send("No login/pass")
+    }
+}
+
 #[derive(RustcEncodable)]
 struct UserStatus {
     logined: bool,
@@ -93,26 +138,22 @@ struct UserStatus {
 fn user_status<'a, D>(request: &mut Request<D>, mut response: Response<'a, D>) -> MiddlewareResult<'a, D> {
     response.set(MediaType::Json);
 
+    let (logined,name) = match request.authorized_user() {
+        Some(user)  => (true, Some(user)),
+        None        => (false, None)
+    };
+
     response.send(json::encode(&UserStatus{
-        logined: false,
-        name: None
+        logined: logined,
+        name: name
     }).unwrap())
 }
-
-macro_rules! routes(
-    { $serv:ident, $($method:ident $($path:expr),+ => $fun:ident),+ } => {
-        {
-            $($(
-                    $serv.$method($path, $fun);
-               )+)+
-        }
-     };
-);
 
 fn main() {
     let mut server = Nickel::new();
 
     server.utilize(StaticFilesHandler::new("assets"));
+    server.utilize(SessionMiddleware::new(&time::now().to_timespec().sec.to_string()));
 
     routes!{server,
         get "/","/search" => index_n_search,
@@ -121,7 +162,8 @@ fn main() {
         get "/get_image/:id" => get_image,
         get "/user_status" => user_status,
 
-        post "/upload_image" => upload_image
+        post "/upload_image" => upload_image,
+        post "/login" => login
     };
 
     thread::spawn(commands::main);

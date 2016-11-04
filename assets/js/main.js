@@ -17,6 +17,12 @@ function getUrlParameter(name) {
     return results === null ? '' : decodeURIComponent(results[1].replace(/\+/g, ' '));
 };
 
+function setAttrs(elem, attrs) {
+    for (var a in attrs) {
+        elem.setAttribute(a, attrs[a])
+    }
+}
+
 function loadMore() {
     var image_block = document.getElementById("images");
     let count = image_block.children.length;
@@ -70,25 +76,56 @@ function drawUploadOrLogin() {
 
     httpGetAsync("/user_status", function(text){
         var body = JSON.parse(text);
+        console.log(body);
 
-        if (body["logined"] == true) {
-            true
+        if (body["logined"] == false) {
+            var form = document.createElement("form");
+            setAttrs(form, {
+                action: "/login",
+                method: "POST"
+            });
+            var login = document.createElement("input")
+            setAttrs(login,{
+                type: "text",
+                name: "login",
+                placeholder: "Login"
+            });
+            var pass = document.createElement("input")
+            setAttrs(pass, {
+                type: "password",
+                name: "password",
+                placeholder: "Password"
+            });
+            var sbm = document.createElement("input");
+            setAttrs(sbm, {
+                type: "submit",
+                value: "Login"
+            });
+            form.appendChild(login);
+            form.appendChild(pass);
+            form.appendChild(sbm);
+            main_form.appendChild(form);
         } else {
             var form = document.createElement("form");
-                form.action="/upload_image";
-                form.method="POST";
-                form.enctype="multipart/form-data";
+            setAttrs(form, {
+                action: "/upload_image",
+                method: "POST",
+                enctype: "multipart/form-data"
+            });
             var file = document.createElement("input")
-                file.type="file";
-                file.name="image";
-                file.accept="image/*";
+            setAttrs(file, {
+                type: "file",
+                name: "image",
+                accept: "image/*"});
             var tags = document.createElement("input")
-                tags.type="text";
-                tags.name="tags";
-                tags.placeholder="Space separated tags";
+            setAttrs(tags,{
+                type: "text",
+                name: "tags",
+                placeholder: "Space separated tags"});
             var sbm = document.createElement("input");
-                sbm.type="submit";
-                sbm.value="Upload";
+            setAttrs(sbm,{
+                type: "submit",
+                value: "Upload"});
             form.appendChild(file);
             form.appendChild(tags);
             form.appendChild(sbm);

@@ -6,14 +6,17 @@ authors = ["TyanNN <tyannn@cocaine.ninja>"]
 [dependencies]
 multipart = { version = "*", features = [ "nickel_" ] }
 nickel = "*"
+nickel-jwt-session = "*"
+
 rustc-serialize = "*"
 hyper = "*"
 image = "*"
 lazy_static = "*"
 rust-crypto = "*"
+time = "*"
 
 rusqlite = { version = "*", optional = true }
-postgres = { version = "*", optional = true, git = "https://github.com/sfackler/rust-postgres"} 
+postgres = { version = "*", optional = true, git = "https://github.com/sfackler/rust-postgres"}
 
 [features]
 default = ["postgresql"]

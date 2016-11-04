@@ -1,6 +1,9 @@
 #![cfg(feature = "postgresql")]
 
 extern crate postgres;
+extern crate crypto;
+
+use self::crypto::scrypt::{scrypt_simple,scrypt_check,ScryptParams};
 
 use self::postgres::{Connection, TlsMode, Result as SQLResult};
 use self::postgres::rows::Row;
@@ -18,18 +21,29 @@ impl Default for Db { // Чтобы Clippy не жаловался
 static POSTGRES_LOGIN : &'static str = "easy";
 static POSTGRES_PASS : &'static str = "";
 
+lazy_static! {
+    static ref SCRYPT_PARAMS: ScryptParams = ScryptParams::new(10, 8, 1); // 10 сильно быстрее чем 14
+}
+
 impl Db {
     pub fn new() -> Self {
         let conn = Connection::connect(format!("postgres://{}:{}@localhost", POSTGRES_LOGIN, POSTGRES_PASS), TlsMode::None).unwrap();
-        conn.execute("CREATE TABLE IF NOT EXISTS images(
-                     id SERIAL PRIMARY KEY,
-                     name TEXT NOT NULL UNIQUE,
-                     tags TEXT[] NOT NULL,
+        conn.batch_execute("CREATE EXTENSION IF NOT EXISTS citext;
+                            CREATE TABLE IF NOT EXISTS images(
+                                id SERIAL PRIMARY KEY,
+                                name TEXT NOT NULL UNIQUE,
+                                tags TEXT[] NOT NULL,
 
-                     got_from TEXT,
-                     original_link TEXT,
-                     rating CHAR
-                    );", &[]).unwrap();
+                                got_from TEXT,
+                                original_link TEXT,
+                                rating CHAR
+                            );
+
+                            CREATE TABLE IF NOT EXISTS users(
+                                id SERIAL PRIMARY KEY,
+                                name CITEXT UNIQUE NOT NULL,
+                                pass TEXT NOT NULL
+                            );").unwrap();
         Db(conn)
     }
 
@@ -113,6 +127,24 @@ impl Db {
                acc.push(Db::extract_image(row));
                acc
            }))
+    }
+
+    pub fn add_user(&self, login: &str, pass: &str) -> SQLResult<()> {
+        let pass = scrypt_simple(pass, &SCRYPT_PARAMS).unwrap();
+
+        self.0.execute("INSERT INTO users (name,pass) VALUES ($1,$2)", &[&login, &pass])?;
+        Ok(())
+    }
+
+    ///Result показывает ошибки в базе, Option - существует пользователь или нет
+    pub fn check_user(&self, login: &str, pass: &str) -> SQLResult<Option<bool>> {
+        let pass_hash = self.0.query("SELECT * FROM USERS WHERE name = $1", &[&login])?;
+        if pass_hash.len() == 0 {
+            Ok(None)
+        } else {
+            let pass_hash = pass_hash.get(0).get::<_, String>("pass");
+            Ok(Some(scrypt_check(pass, &pass_hash).unwrap()))
+        }
     }
 
     fn extract_image(row: Row) -> Image {

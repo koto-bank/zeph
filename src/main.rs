@@ -84,6 +84,21 @@ fn more<'a, D>(request: &mut Request<D>, mut response: Response<'a, D>) -> Middl
     response.send(json::encode(&images).unwrap())
 }
 
+#[derive(RustcEncodable)]
+struct UserStatus {
+    logined: bool,
+    name: Option<String>
+}
+
+fn user_status<'a, D>(request: &mut Request<D>, mut response: Response<'a, D>) -> MiddlewareResult<'a, D> {
+    response.set(MediaType::Json);
+
+    response.send(json::encode(&UserStatus{
+        logined: false,
+        name: None
+    }).unwrap())
+}
+
 macro_rules! routes(
     { $serv:ident, $($method:ident $($path:expr),+ => $fun:ident),+ } => {
         {
@@ -104,6 +119,7 @@ fn main() {
         get "/show/:id" => show,
         get "/more" => more,
         get "/get_image/:id" => get_image,
+        get "/user_status" => user_status,
 
         post "/upload_image" => upload_image
     };

@@ -10,6 +10,7 @@ rustc-serialize = "*"
 hyper = "*"
 image = "*"
 lazy_static = "*"
+rust-crypto = "*"
 
 rusqlite = { version = "*", optional = true }
 postgres = { version = "*", optional = true, git = "https://github.com/sfackler/rust-postgres"} 

@@ -23,13 +23,9 @@
             <div id="images">
             </div>
             <button id="more-button" onclick="loadMore()">More</button>
-            <button id="upload-button" onclick="showUploadForm()">Upload image</button>
-            <div id="upload-form">
-                <form action="/upload_image" method="POST" enctype="multipart/form-data">
-                    <input type="file" name="image" accept="image/*">
-                    <input type="text" name="tags" placeholder="Space separated tags">
-                    <input type="submit" value="Upload">
-                </form>
+            <button id="upload-button" onclick="showUploadOrLogin()">Upload image</button>
+            <div id="login-or-upload-form">
+                <!-- Form here --!>
             </div>
         </div>
     </body>

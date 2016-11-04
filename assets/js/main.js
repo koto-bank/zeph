@@ -65,8 +65,40 @@ function loadMore() {
     });
 }
 
-function showUploadForm() {
-    var form = document.getElementById("upload-form");
+function drawUploadOrLogin() {
+    var main_form = document.getElementById("login-or-upload-form");
+
+    httpGetAsync("/user_status", function(text){
+        var body = JSON.parse(text);
+
+        if (body["logined"] == true) {
+            true
+        } else {
+            var form = document.createElement("form");
+                form.action="/upload_image";
+                form.method="POST";
+                form.enctype="multipart/form-data";
+            var file = document.createElement("input")
+                file.type="file";
+                file.name="image";
+                file.accept="image/*";
+            var tags = document.createElement("input")
+                tags.type="text";
+                tags.name="tags";
+                tags.placeholder="Space separated tags";
+            var sbm = document.createElement("input");
+                sbm.type="submit";
+                sbm.value="Upload";
+            form.appendChild(file);
+            form.appendChild(tags);
+            form.appendChild(sbm);
+            main_form.appendChild(form);
+        }
+    });
+}
+
+function showUploadOrLogin() {
+    var form = document.getElementById("login-or-upload-form");
 
     if (form.style.bottom != "7%") {
         form.style.bottom = "7%"
@@ -77,6 +109,7 @@ function showUploadForm() {
 
 window.onload = function() {
     loadMore();
+    drawUploadOrLogin();
 
     document.getElementById("tag-search-field").value = getUrlParameter("q");
 }

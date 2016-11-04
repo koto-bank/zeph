@@ -18,7 +18,7 @@ body {
     opacity: 1;
 }
 
-#upload-form {
+#login-or-upload-form {
     padding: 2%;
     background-color: #222;
     width: 30%;

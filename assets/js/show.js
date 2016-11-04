@@ -14,7 +14,7 @@ function load(){
         console.log(body);
         var tags_block = document.getElementById("tags");
         document.getElementById("id").textContent = "#" + body["id"];
-        if (body["original_link"] != " ") {
+        if (body["original_link"] !== null) {
             var l = document.createElement("a");
             l.href = body["original_link"];
             l.textContent = "Original page";
@@ -22,7 +22,7 @@ function load(){
             tags_block.appendChild(document.createElement("br"));
         }
 
-        if (body["rating"] != " ") {
+        if (body["rating"] !== null) {
             var l = document.createElement("a");
             l.href = "/search?q=rating:" + body["rating"];
             l.textContent = "rating:" + body["rating"];
@@ -30,10 +30,18 @@ function load(){
             tags_block.appendChild(document.createElement("br"));
         }
 
-        if (body["got_from"] != " ") {
+        if (body["got_from"] !== null) {
             var l = document.createElement("a");
             l.href = "/search?q=from:" + body["got_from"];
             l.textContent = "from:" + body["got_from"];
+            tags_block.appendChild(l);
+            tags_block.appendChild(document.createElement("br"));
+        }
+
+        if (body["uploader"] !== null) {
+            var l = document.createElement("a");
+            l.href = "/search?q=uploader:" + body["uploader"];
+            l.textContent = "uploader:" + body["uploader"];
             tags_block.appendChild(l);
             tags_block.appendChild(document.createElement("br"));
         }

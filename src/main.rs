@@ -15,8 +15,7 @@ use nickel::{Nickel,
             QueryString,
             MediaType,
             FormBody};
-
-
+use nickel::status::StatusCode;
 use nickel::extensions::Redirect;
 
 use nickel_jwt_session::*;
@@ -54,6 +53,12 @@ macro_rules! routes(
      };
 );
 
+#[derive(RustcEncodable)]
+struct UserStatus {
+    logined: bool,
+    name: Option<String>
+}
+
 fn index_n_search<'a, D>(_request: &mut Request<D>, response: Response<'a, D>) -> MiddlewareResult<'a, D> {
     response.render("src/templates/index.html", &[0]) // Вот тут и ниже так надо, чтобы не пересобирать программу при изменении HTML
 }
@@ -63,7 +68,8 @@ fn show<'a, D>(_request: &mut Request<D>, response: Response<'a, D>) -> Middlewa
 }
 
 fn upload_image<'mw>(req: &mut Request, mut res: Response<'mw>) -> MiddlewareResult<'mw> {
-    if let Ok(mut multipart) = Multipart::from_request(req) {
+    if let Some(username) = req.authorized_user() {
+        if let Ok(mut multipart) = Multipart::from_request(req) {
             match multipart.save_all() {
                 SaveResult::Full(entries) | SaveResult::Partial(entries, _)  => {
                     if let Some(savedfile) = entries.files.get("image") {
@@ -72,7 +78,7 @@ fn upload_image<'mw>(req: &mut Request, mut res: Response<'mw>) -> MiddlewareRes
                                 let tags = tags.split_whitespace().map(String::from).collect::<Vec<_>>();
                                 let mut body = Vec::new();
                                 let _ = File::open(&savedfile.path).unwrap().read_to_end(&mut body);
-                                let name = DB.lock().unwrap().add_with_tags_name(&tags, filename.split('.').collect::<Vec<_>>()[1]).unwrap();
+                                let name = DB.lock().unwrap().add_with_tags_name(&tags, filename.split('.').collect::<Vec<_>>()[1], &username).unwrap();
 
                                 save_image(Path::new("assets/images"), &name, &body);
 
@@ -85,9 +91,12 @@ fn upload_image<'mw>(req: &mut Request, mut res: Response<'mw>) -> MiddlewareRes
 
                 SaveResult::Error(e) =>  res.send(format!("Server could not handle multipart POST! {:?}", e))
             }
+        } else {
+            res.set(nickel::status::StatusCode::BadRequest);
+            res.send("Not a multipart request")
+        }
     } else {
-        res.set(nickel::status::StatusCode::BadRequest);
-        res.send("Not a multipart request")
+        res.error(StatusCode::Forbidden, "Not logged in")
     }
 }
 
@@ -127,12 +136,6 @@ fn login<'a, D>(request: &mut Request<D>, mut response: Response<'a, D>) -> Midd
     } else {
         response.send("No login/pass")
     }
-}
-
-#[derive(RustcEncodable)]
-struct UserStatus {
-    logined: bool,
-    name: Option<String>
 }
 
 fn user_status<'a, D>(request: &mut Request<D>, mut response: Response<'a, D>) -> MiddlewareResult<'a, D> {

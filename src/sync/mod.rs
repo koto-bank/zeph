@@ -97,7 +97,7 @@ fn process_downloads(client: &Client, images: &[Image], recv: &Receiver<()>) -> 
             let mut m_tags = images_c.iter().find(|x| x.name == im.name ).unwrap().tags.clone();
 
             if !arr_eq(&mut m_tags, &mut im.tags.clone()) {
-                DB.lock().unwrap().add_image(&im.name, &im.tags, im.got_from.as_str(), im.post_url.as_str(), im.rating).unwrap();
+                DB.lock().unwrap().add_image(&im.name, &im.tags, im.got_from.as_str(), im.post_url.as_str(), "sync" , im.rating).unwrap();
                 writeln!(&mut outf, "UPDATE tags on {}", im.name).unwrap();
             } else if !printed {
                 writeln!(&mut outf, "ALREADY DONE {}", im.name).unwrap();
@@ -116,7 +116,7 @@ fn download(client: &Client, im: &Image) -> Result<(), hyper::Error> {
     let mut body = Vec::new();
     res.read_to_end(&mut body).unwrap();
 
-    DB.lock().unwrap().add_image(&im.name, &im.tags, im.got_from.as_str(), im.post_url.as_str(), im.rating).unwrap();
+    DB.lock().unwrap().add_image(&im.name, &im.tags, im.got_from.as_str(), im.post_url.as_str(), "sync", im.rating).unwrap();
 
     save_image(Path::new("assets/images"), &im.name, &body);
 

@@ -48,19 +48,20 @@ impl Db {
     }
 
     /// Сохранить картинку, сгенерировава имя из тэгов
-    pub fn add_with_tags_name(&self, tags: &[String], ext: &str) -> SQLResult<String> {
+    pub fn add_with_tags_name(&self, tags: &[String], ext: &str, uploader: &str) -> SQLResult<String> {
         let lastnum = self.0.query("SELECT id FROM images ORDER BY id DESC LIMIT 1", &[])?.get(0).get::<_, i32>("id");
 
         let name = format!("{}_{}.{}", lastnum + 1  , tags.join("_").replace("'","''"),ext);
-        self.add_image(&name, tags, None, None, None)?;
+        self.add_image(&name, tags, None, None, uploader, None)?;
         Ok(name)
     }
 
     pub fn add_image<'a, T1: Into<Option<&'a str>>,
     T2: Into<Option<&'a str>>,
-    C: Into<Option<char>>>(&self, name: &str, tags: &[String], got_from: T1, original_link: T2, rating: C) -> SQLResult<()> {
-        self.0.execute("INSERT into images (name,tags,got_from,original_link,rating) VALUES ($1,$2,$3,$4,$5) ON CONFLICT (name) DO UPDATE SET tags = $2",
-        &[&name,&tags,&got_from.into(), &original_link.into(),&rating.into().map(|x| x.to_string())]).unwrap();
+    T3: Into<Option<&'a str>>,
+    C: Into<Option<char>>>(&self, name: &str, tags: &[String], got_from: T1, original_link: T2, uploader:T3, rating: C) -> SQLResult<()> {
+        self.0.execute("INSERT into images (name,tags,got_from,original_link,rating,uploader) VALUES ($1,$2,$3,$4,$5,$6) ON CONFLICT (name) DO UPDATE SET tags = $2",
+        &[&name,&tags,&got_from.into(), &original_link.into(),&rating.into().map(|x| x.to_string()), &uploader.into()]).unwrap();
         Ok(())
     }
 
@@ -113,6 +114,17 @@ impl Db {
                     s.push_str(")");
 
                     s
+                },
+
+                Tag::Uploader(ref u) => {
+                    let mut s = "(".to_string();
+                    for tg in u {
+                        s.push_str(&format!("uploader = '{}' OR ", tg))
+                    }
+                    let _ = (0..4).inspect(|_| {s.pop(); }).collect::<Vec<_>>();
+                    s.push_str(")");
+
+                    s
                 }
             }
         }).collect::<Vec<_>>().join(" AND ");
@@ -152,9 +164,10 @@ impl Db {
             id: row.get("id"),
             name: row.get("name"),
             tags: row.get("tags"),
-            got_from: row.get::<_, Option<String>>("got_from").unwrap_or(" ".to_string()),
-            original_link: row.get::<_, Option<String>>("original_link").unwrap_or(" ".to_string()),
-            rating: row.get::<_,Option<String>>("rating").unwrap_or(" ".to_string()).chars().nth(0).unwrap_or(' ')
+            got_from: row.get::<_, Option<String>>("got_from"),
+            original_link: row.get::<_, Option<String>>("original_link"),
+            rating: row.get::<_,Option<String>>("rating").map(|x| x.to_string().chars().collect::<Vec<_>>()[0]),
+            uploader: row.get::<_,Option<String>>("uploader")
         }
     }
 }

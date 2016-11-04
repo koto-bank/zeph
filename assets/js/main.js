@@ -73,10 +73,10 @@ function loadMore() {
 
 function drawUploadOrLogin() {
     var main_form = document.getElementById("login-or-upload-form");
+    var upload_button = document.getElementById("upload-button");
 
     httpGetAsync("/user_status", function(text){
         var body = JSON.parse(text);
-        console.log(body);
 
         if (body["logined"] == false) {
             var form = document.createElement("form");
@@ -106,6 +106,7 @@ function drawUploadOrLogin() {
             form.appendChild(sbm);
             main_form.appendChild(form);
         } else {
+            upload_button.textContent = "Upload image (as " + body["name"] + ")";
             var form = document.createElement("form");
             setAttrs(form, {
                 action: "/upload_image",

@@ -3,9 +3,10 @@ pub struct Image {
     pub id: i32,
     pub name: String,
     pub tags: Vec<String>,
-    pub got_from: String,
-    pub original_link: String,
-    pub rating: char
+    pub got_from: Option<String>,
+    pub original_link: Option<String>,
+    pub uploader: Option<String>,
+    pub rating: Option<char>,
 }
 
 #[derive(Debug,Clone)]
@@ -20,7 +21,8 @@ enum Tag {
     Exclude(String),
     Rating(Vec<String>),
     AnyWith(AnyWith),
-    From(Vec<String>)
+    From(Vec<String>),
+    Uploader(Vec<String>)
 }
 
 pub mod postgres;
@@ -39,6 +41,9 @@ fn parse_tag(tag: &str) -> Tag {
     } else if tag.starts_with("from") {
         let tag = tag.split("from:").collect::<Vec<_>>()[1];
         Tag::From(tag.split(',').map(String::from).collect::<Vec<_>>())
+    } else if tag.starts_with("uploader") {
+        let tag = tag.split("uploader:").collect::<Vec<_>>()[1];
+        Tag::Uploader(tag.split(',').map(String::from).collect::<Vec<_>>())
     } else if tag.starts_with('-') {
         Tag::Exclude(tag[1..].to_string())
     } else if tag.starts_with('*') {

@@ -56,9 +56,7 @@ pub fn main(rc: &Receiver<()>) {
             }
         });
 
-        if let Err(_) = process_downloads(&client, &images, &rc) {
-            break
-        }
+        if process_downloads(&client, &images, rc).is_err() { break }
 
         url_string = format!("https://e621.net/post/index.json?before_id={}&limit=300", before_id);
     }

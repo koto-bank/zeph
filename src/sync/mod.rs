@@ -33,12 +33,8 @@ pub mod konachan;
 
 /// Сохраняет картинку & создаёт к ней превью
 pub fn save_image(dir: &Path, name: &str, file: &[u8]) {
-    if let Err(_) = read_dir("assets/images") {
-        create_dir("assets/images").unwrap();
-    }
-    if let Err(_) = read_dir("assets/images/preview") {
-        create_dir("assets/images/preview").unwrap();
-    }
+    if read_dir("assets/images").is_err() { create_dir("assets/images").unwrap(); }
+    if read_dir("assets/images/preview").is_err() { create_dir("assets/images/preview").unwrap(); }
 
     let prev = image::load_from_memory(file).unwrap().resize(500, 500, FilterType::Nearest);
 
@@ -73,11 +69,10 @@ fn process_downloads(client: &Client, images: &[Image], recv: &Receiver<()>) -> 
     let images_c = DB.lock().unwrap().get_images(None,0).unwrap();
     let mut outf = OpenOptions::new().append(true).create(true).open("OUTPUT").unwrap();
 
-    let mut printed = false;
-    if includes(&images.iter().map(|x| x.name.clone()).collect::<Vec<_>>(), &images_c.iter().map(|x| x.name.clone()).collect::<Vec<_>>()) {
+    let printed = if includes(&images.iter().map(|x| x.name.clone()).collect::<Vec<_>>(), &images_c.iter().map(|x| x.name.clone()).collect::<Vec<_>>()) {
         writeln!(&mut outf, "ALREADY DONE {} ~ {}", images.first().unwrap().name, images.last().unwrap().name).unwrap();
-        printed = true;
-    }
+        true
+    } else { false };
 
     for im in images {
         match recv.try_recv() {
@@ -104,10 +99,8 @@ fn process_downloads(client: &Client, images: &[Image], recv: &Receiver<()>) -> 
             if !arr_eq(&mut m_tags, &mut im.tags.clone()) {
                 DB.lock().unwrap().add_image(&im.name, &im.tags, im.got_from.as_str(), im.post_url.as_str(), im.rating).unwrap();
                 writeln!(&mut outf, "UPDATE tags on {}", im.name).unwrap();
-            } else {
-                if !printed {
-                    writeln!(&mut outf, "ALREADY DONE {}", im.name).unwrap();
-                }
+            } else if !printed {
+                writeln!(&mut outf, "ALREADY DONE {}", im.name).unwrap();
             }
         }
     }

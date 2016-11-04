@@ -19,7 +19,7 @@ pub fn main() {
 
         let mut inputs = String::new();
         inf.read_to_string(&mut inputs).unwrap();
-        let inputs = inputs.split("\n").collect::<Vec<_>>();
+        let inputs = inputs.split('\n').collect::<Vec<_>>();
 
         for input in inputs {
             let input = input.trim();

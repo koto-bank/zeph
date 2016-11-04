@@ -65,9 +65,7 @@ pub fn main(rc: &Receiver<()>) {
             acc
         });
 
-        if let Err(_) = process_downloads(&client, &images, &rc) {
-            break
-        }
+        if process_downloads(&client, &images, rc).is_err() { break }
 
         page += 1;
 

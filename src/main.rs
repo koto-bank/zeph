@@ -120,16 +120,20 @@ fn more<'a, D>(request: &mut Request<D>, mut response: Response<'a, D>) -> Middl
 
 fn adduser<'a, D>(request: &mut Request<D>, mut response: Response<'a, D>) -> MiddlewareResult<'a, D> {
     let body = try_with!(response, request.form_body());
-    if let (Some(login), Some(pass)) = (body.get("login"), body.get("password")) {
-        if let Ok(res) = DB.lock().unwrap().add_user(&login,&pass) {
-            if res {
-                response.set_jwt_user(login);
-                response.redirect("/")
+    if let (Some(login), Some(pass), Some(confirm_pass)) = (body.get("login"), body.get("password"),body.get("confirm_password")) {
+        if pass == confirm_pass {
+            if let Ok(res) = DB.lock().unwrap().add_user(&login,&pass) {
+                if res {
+                    response.set_jwt_user(login);
+                    response.redirect("/")
+                } else {
+                    response.send("User already exists")
+                }
             } else {
-                response.send("User already exists")
+                response.error(StatusCode::InternalServerError, "Internal server error")
             }
         } else {
-            response.error(StatusCode::InternalServerError, "Internal server error")
+            response.send("Password and confirmation are not equeal")
         }
     } else {
         response.send("No data")

@@ -97,6 +97,14 @@ function drawUploadOrLogin() {
                 name: "password",
                 placeholder: "Password"
             });
+            var confirm_pass = document.createElement("input");
+            setAttrs(confirm_pass, {
+                type: "password",
+                name: "confirm_password",
+                placeholder: "Confirm password"
+            });
+            var confirm_pass_br = document.createElement("br");
+
             var sbm = document.createElement("input");
             setAttrs(sbm, {
                 type: "submit",
@@ -109,18 +117,34 @@ function drawUploadOrLogin() {
                 if (lor.textContent == "Sign up") {
                     lor.textContent = "Sign in"
                     sbm.value = "Register"
+                    login.placeholder = "New login"
+                    pass.placeholder = "New password"
+
                     form.action = "/adduser"
+
+                    form.insertBefore(confirm_pass, sbm);
+                    form.insertBefore(confirm_pass_br, sbm)
                 } else {
                     lor.textContent = "Sign up"
                     sbm.value = "Login"
+                    login.placeholder = "Login"
+                    pass.placeholder = "Password"
+
                     form.action = "/login"
+
+                    try {
+                        form.removeChild(confirm_pass);
+                        form.removeChild(confirm_pass_br)
+                    } catch(err) { }
                 }
             }
 
             main_form.appendChild(lor);
-
             form.appendChild(login);
             form.appendChild(pass);
+
+
+
             form.appendChild(sbm);
             main_form.appendChild(form);
         } else {

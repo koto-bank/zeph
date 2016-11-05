@@ -11,7 +11,7 @@ use std::sync::mpsc::Receiver;
 
 pub fn main(rc: &Receiver<()>) {
     let client = Client::new();
-    let mut url_string = "https://konachan.com/post.json?limit=500".to_string(); // Konachan вроде как вообще не ограничивает
+    let mut url_string = "https://konachan.com/post.json?limit=100".to_string();
     let mut page = 1;
 
     loop {

@@ -14,6 +14,8 @@ function load(){
         var tags_block = document.getElementById("tags");
         var image_info = document.getElementById("image-info");
         document.getElementById("id").textContent = "#" + body["id"];
+        document.getElementsByTagName("title")[0].textContent = "Zeph - " + body["tags"].join(" ");
+
         if (body["original_link"] !== null) {
             var l = document.createElement("a");
             l.href = body["original_link"];

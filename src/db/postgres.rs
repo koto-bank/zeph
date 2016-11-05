@@ -141,6 +141,12 @@ impl Db {
            }))
     }
 
+    pub fn delete_image(&self, id: i32) -> SQLResult<String> {
+        let name = self.0.query("SELECT * FROM images WHERE id = $1", &[&id])?.get(0).get::<_,String>("name");
+        self.0.execute("DELETE FROM images WHERE id = $1", &[&id])?;
+        Ok(name)
+    }
+
     // true - всё хорошо, false - пользователь уже существует
     pub fn add_user(&self, login: &str, pass: &str) -> SQLResult<bool> {
         if self.0.query("SELECT * FROM users WHERE name = $1", &[&login])?.len() == 0 && login.to_lowercase() != "sync" {

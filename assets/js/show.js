@@ -11,40 +11,52 @@ function load(){
     var reg = /show\/(\d+)/;
     httpGetAsync(window.location.pathname.replace("show","get_image"), function(text){
         var body = JSON.parse(text);
-        console.log(body);
         var tags_block = document.getElementById("tags");
+        var image_info = document.getElementById("image-info");
         document.getElementById("id").textContent = "#" + body["id"];
         if (body["original_link"] !== null) {
             var l = document.createElement("a");
             l.href = body["original_link"];
             l.textContent = "Original page";
-            tags_block.appendChild(l);
-            tags_block.appendChild(document.createElement("br"));
+            image_info.appendChild(l);
+            image_info.appendChild(document.createElement("br"));
         }
 
         if (body["rating"] !== null) {
             var l = document.createElement("a");
             l.href = "/search?q=rating:" + body["rating"];
             l.textContent = "rating:" + body["rating"];
-            tags_block.appendChild(l);
-            tags_block.appendChild(document.createElement("br"));
+            image_info.appendChild(l);
+            image_info.appendChild(document.createElement("br"));
         }
 
         if (body["got_from"] !== null) {
             var l = document.createElement("a");
             l.href = "/search?q=from:" + body["got_from"];
             l.textContent = "from:" + body["got_from"];
-            tags_block.appendChild(l);
-            tags_block.appendChild(document.createElement("br"));
+            image_info.appendChild(l);
+            image_info.appendChild(document.createElement("br"));
         }
 
         if (body["uploader"] !== null) {
             var l = document.createElement("a");
             l.href = "/search?q=uploader:" + body["uploader"];
             l.textContent = "uploader:" + body["uploader"];
-            tags_block.appendChild(l);
-            tags_block.appendChild(document.createElement("br"));
+            image_info.appendChild(l);
+            image_info.appendChild(document.createElement("br"));
         }
+
+        httpGetAsync("/user_status", function(text){
+            var userstatus = JSON.parse(text);
+            console.log(userstatus);
+            if (userstatus["logined"] == true && userstatus["name"] == body["uploader"]) {
+                var l = document.createElement("a");
+                l.href = window.location.pathname.replace("show","delete");
+                l.textContent = "Delete image";
+                image_info.appendChild(l);
+                image_info.appendChild(document.createElement("br"));
+            }
+        });
 
         body["tags"].forEach(function(tag) {
             tags_block.appendChild(document.createElement("br"));

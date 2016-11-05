@@ -20,7 +20,7 @@ use nickel::extensions::Redirect;
 
 use nickel_jwt_session::*;
 
-use std::fs::File;
+use std::fs::{File,remove_file};
 use std::path::Path;
 use std::io::Read;
 use std::thread;
@@ -174,6 +174,14 @@ fn user_status<'a, D>(request: &mut Request<D>, mut response: Response<'a, D>) -
     }).unwrap())
 }
 
+fn delete<'a, D>(request: &mut Request<D>, response: Response<'a, D>) -> MiddlewareResult<'a, D> {
+    let id = request.param("id").unwrap().parse::<i32>().unwrap();
+    let name = DB.lock().unwrap().delete_image(id).unwrap();
+    remove_file(format!("assets/images/{}", name)).unwrap();
+    remove_file(format!("assets/images/preview/{}", name)).unwrap();
+    response.redirect("/")
+}
+
 fn main() {
     let mut server = Nickel::new();
 
@@ -186,6 +194,7 @@ fn main() {
         get "/more" => more,
         get "/get_image/:id" => get_image,
         get "/user_status" => user_status,
+        get "/delete/:id" => delete,
 
         post "/upload_image" => upload_image,
         post "/login" => login,

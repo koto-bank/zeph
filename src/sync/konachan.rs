@@ -38,6 +38,7 @@ pub fn main(rc: &Receiver<()>) {
             let ext = ext.last().unwrap();
 
             let id = image["id"].as_i64().unwrap();
+            let score = image["score"].as_i64().unwrap();
 
             let name = format!("konachan_{}.{}", id, ext);
 
@@ -47,7 +48,8 @@ pub fn main(rc: &Receiver<()>) {
                 url: url,
                 tags: tags,
                 rating: rating,
-                post_url: format!("http://konachan.com/post/show/{}", id)
+                post_url: format!("http://konachan.com/post/show/{}", id),
+                score: score as i32
             });
             acc
         });

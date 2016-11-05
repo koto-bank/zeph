@@ -52,6 +52,7 @@ pub fn main(rc: &Receiver<()>) {
             let ext = image["file_name"].as_string().unwrap().split('.').collect::<Vec<_>>();
             let ext = ext.last().unwrap();
             let name = format!("derpibooru_{}.{}", id, ext);
+            let score = image["score"].as_i64().unwrap();
 
 
             acc.push(Image{
@@ -60,7 +61,8 @@ pub fn main(rc: &Receiver<()>) {
                     url: url,
                     tags: tags,
                     rating: rating,
-                    post_url: format!("https://derpibooru.org/{}", id)
+                    post_url: format!("https://derpibooru.org/{}", id),
+                    score: score as i32
                 });
             acc
         });

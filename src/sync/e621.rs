@@ -41,6 +41,7 @@ pub fn main(rc: &Receiver<()>) {
                 let url = image["file_url"].as_string().unwrap().to_string();
                 let id = image["id"].as_i64().unwrap();
                 let name = format!("e621_{}.{}", id, ext);
+                let score = image["score"].as_i64().unwrap();
 
                 acc.push(Image{
                     name: name.to_string(),
@@ -48,7 +49,8 @@ pub fn main(rc: &Receiver<()>) {
                     url: url,
                     tags: tags,
                     rating: rating,
-                    post_url: format!("https://e621.net/post/show/{}", id)
+                    post_url: format!("https://e621.net/post/show/{}", id),
+                    score: score as i32
                 });
                 acc
             } else {

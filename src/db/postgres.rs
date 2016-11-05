@@ -10,7 +10,7 @@ use self::postgres::rows::Row;
 
 pub struct Db(Connection);
 
-use super::{Image,Tag,AnyWith,parse_tag};
+use super::{Image,Tag,AnyWith,ImageBuilder,parse_tag};
 
 impl Default for Db { // Чтобы Clippy не жаловался
     fn default() -> Self {
@@ -33,6 +33,8 @@ impl Db {
                                 id SERIAL PRIMARY KEY,
                                 name TEXT NOT NULL UNIQUE,
                                 tags TEXT[] NOT NULL,
+                                uploader TEXT,
+                                score INT NOT NULL DEFAULT 0,
 
                                 got_from TEXT,
                                 original_link TEXT,
@@ -52,16 +54,26 @@ impl Db {
         let lastnum = self.0.query("SELECT id FROM images ORDER BY id DESC LIMIT 1", &[])?.get(0).get::<_, i32>("id");
 
         let name = format!("{}_{}.{}", lastnum + 1  , tags.join("_").replace("'","''"),ext);
-        self.add_image(&name, tags, None, None, uploader, None)?;
+        self.add_image(&ImageBuilder::new(&name, tags).uploader(uploader).finalize())?;
         Ok(name)
     }
 
-    pub fn add_image<'a, T1: Into<Option<&'a str>>,
-    T2: Into<Option<&'a str>>,
-    T3: Into<Option<&'a str>>,
-    C: Into<Option<char>>>(&self, name: &str, tags: &[String], got_from: T1, original_link: T2, uploader:T3, rating: C) -> SQLResult<()> {
-        self.0.execute("INSERT into images (name,tags,got_from,original_link,rating,uploader) VALUES ($1,$2,$3,$4,$5,$6) ON CONFLICT (name) DO UPDATE SET tags = $2",
-        &[&name,&tags,&got_from.into(), &original_link.into(),&rating.into().map(|x| x.to_string()), &uploader.into()]).unwrap();
+    pub fn add_image(&self, image: &ImageBuilder) -> SQLResult<()> {
+        self.0.execute("INSERT into images (name,
+                                            tags,
+                                            got_from,
+                                            original_link,
+                                            rating,
+                                            uploader,
+                                            score)
+                       VALUES ($1,
+                               $2,
+                               $3,
+                               $4,
+                               $5,
+                               $6,
+                               $7) ON CONFLICT (name) DO UPDATE SET tags = $2, score = $7",
+        &[&image.name,&image.tags,&image.got_from, &image.original_link,&image.rating.map(|x| x.to_string()), &image.uploader, &image.score]).unwrap();
         Ok(())
     }
 
@@ -85,8 +97,20 @@ impl Db {
 
     pub fn by_tags<T: Into<Option<i32>>>(&self, take: T, skip: usize, tags: &[String]) -> SQLResult<Vec<Image>> {
         let tags = tags.iter().map(|x| parse_tag(x)).collect::<Vec<_>>();
+        let order = tags.iter().filter_map(|x| {
+            match *x {
+                Tag::OrderBy(ref by, ref ascdesc) => {
+                    Some(format!("{:?}", by).to_lowercase() + " " + &format!("{:?}", ascdesc).to_uppercase())
+                },
+                _   => None
+            }
+        }).collect::<Vec<_>>();
+        let order = match order.last() {
+            Some(t) => t,
+            None    => "id DESC"
+        };
 
-        let q = tags.iter().map(|t| {
+        let q = tags.clone().iter().map(|t| {
             match *t {
                 Tag::Include(ref incl) => format!(r"tags @> ARRAY['{}']", incl),
                 Tag::Exclude(ref excl) => format!(r"NOT tags @> ARRAY['{}']", excl),
@@ -125,16 +149,22 @@ impl Db {
                     s.push_str(")");
 
                     s
-                }
+                },
+                Tag::OrderBy(_,_) => {String::new()}
             }
-        }).collect::<Vec<_>>().join(" AND ");
+        }).filter(|x| !x.is_empty()).collect::<Vec<_>>().join(" AND ");
+        let q = if !q.is_empty() {
+            format!("WHERE {}", q)
+        } else {
+            String::new()
+        };
 
         let take = match take.into() {
             Some(x) => x.to_string(),
             None    => "ALL".to_string()
         };
 
-        Ok(self.0.query(&format!("SELECT * FROM images WHERE {} ORDER BY id DESC LIMIT {} OFFSET {}", q, take, skip),&[])?
+        Ok(self.0.query(&format!("SELECT * FROM images {} ORDER BY {} LIMIT {} OFFSET {}", q, order, take, skip),&[])?
            .iter().fold(Vec::new(), |mut acc, row| {
                acc.push(Db::extract_image(row));
                acc
@@ -178,7 +208,8 @@ impl Db {
             got_from: row.get::<_, Option<String>>("got_from"),
             original_link: row.get::<_, Option<String>>("original_link"),
             rating: row.get::<_,Option<String>>("rating").map(|x| x.to_string().chars().collect::<Vec<_>>()[0]),
-            uploader: row.get::<_,Option<String>>("uploader")
+            uploader: row.get::<_,Option<String>>("uploader"),
+            score: row.get::<_,i32>("score")
         }
     }
 }

@@ -46,6 +46,10 @@ function load(){
             image_info.appendChild(document.createElement("br"));
         }
 
+        var score = document.createTextNode("Score: " + body["score"]);
+        image_info.appendChild(score);
+        image_info.appendChild(document.createElement("br"));
+
         httpGetAsync("/user_status", function(text){
             var userstatus = JSON.parse(text);
             console.log(userstatus);

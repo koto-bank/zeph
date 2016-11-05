@@ -9,6 +9,7 @@ use std::fs::{File,OpenOptions,read_dir,create_dir};
 use std::path::Path;
 
 pub use super::DB;
+use super::db::ImageBuilder;
 
 use rustc_serialize::json::Json;
 
@@ -23,7 +24,8 @@ pub struct Image {
     got_from: String,
     url: String,
     rating: char,
-    post_url: String
+    post_url: String,
+    score: i32
 }
 
 pub mod e621;
@@ -94,11 +96,19 @@ fn process_downloads(client: &Client, images: &[Image], recv: &Receiver<()>) -> 
                 writeln!(&mut outf, "DONE {}", im.name).unwrap();
             }
         } else {
-            let mut m_tags = images_c.iter().find(|x| x.name == im.name ).unwrap().tags.clone();
+            let m_image = images_c.iter().find(|x| x.name == im.name ).unwrap();
+            let mut m_tags = m_image.tags.clone();
 
-            if !arr_eq(&mut m_tags, &mut im.tags.clone()) {
-                DB.lock().unwrap().add_image(&im.name, &im.tags, im.got_from.as_str(), im.post_url.as_str(), "sync" , im.rating).unwrap();
-                writeln!(&mut outf, "UPDATE tags on {}", im.name).unwrap();
+            if !arr_eq(&mut m_tags, &mut im.tags.clone()) || im.score != m_image.score {
+                let imb = ImageBuilder::new(&im.name, &im.tags)
+                    .got_from(&im.got_from)
+                    .original_link(&im.post_url)
+                    .uploader("sync")
+                    .rating(im.rating)
+                    .score(im.score)
+                    .finalize();
+                DB.lock().unwrap().add_image(&imb).unwrap();
+                writeln!(&mut outf, "UPDATE tags / score on {}", im.name).unwrap();
             } else if !printed {
                 writeln!(&mut outf, "ALREADY DONE {}", im.name).unwrap();
             }
@@ -115,8 +125,14 @@ fn download(client: &Client, im: &Image) -> Result<(), hyper::Error> {
 
     let mut body = Vec::new();
     res.read_to_end(&mut body).unwrap();
-
-    DB.lock().unwrap().add_image(&im.name, &im.tags, im.got_from.as_str(), im.post_url.as_str(), "sync", im.rating).unwrap();
+    let imb = ImageBuilder::new(&im.name, &im.tags)
+        .got_from(&im.got_from)
+        .original_link(&im.post_url)
+        .uploader("sync")
+        .rating(im.rating)
+        .score(im.score)
+        .finalize();
+    DB.lock().unwrap().add_image(&imb).unwrap();
 
     save_image(Path::new("assets/images"), &im.name, &body);
 

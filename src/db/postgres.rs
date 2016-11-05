@@ -149,7 +149,7 @@ impl Db {
 
     // true - всё хорошо, false - пользователь уже существует
     pub fn add_user(&self, login: &str, pass: &str) -> SQLResult<bool> {
-        if self.0.query("SELECT * FROM users WHERE name = $1", &[&login])?.len() == 0 && login.to_lowercase() != "sync" {
+        if self.0.query("SELECT * FROM users WHERE name = $1", &[&login])?.is_empty() && login.to_lowercase() != "sync" {
             let pass = scrypt_simple(pass, &SCRYPT_PARAMS).unwrap();
 
             self.0.execute("INSERT INTO users (name,pass) VALUES ($1,$2)", &[&login, &pass])?;
@@ -162,7 +162,7 @@ impl Db {
     ///Result показывает ошибки в базе, Option - существует пользователь или нет
     pub fn check_user(&self, login: &str, pass: &str) -> SQLResult<Option<bool>> {
         let pass_hash = self.0.query("SELECT * FROM USERS WHERE name = $1", &[&login])?;
-        if pass_hash.len() == 0 {
+        if pass_hash.is_empty() {
             Ok(None)
         } else {
             let pass_hash = pass_hash.get(0).get::<_, String>("pass");

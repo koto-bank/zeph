@@ -122,7 +122,7 @@ fn adduser<'a, D>(request: &mut Request<D>, mut response: Response<'a, D>) -> Mi
     let body = try_with!(response, request.form_body());
     if let (Some(login), Some(pass), Some(confirm_pass)) = (body.get("login"), body.get("password"),body.get("confirm_password")) {
         if pass == confirm_pass {
-            if let Ok(res) = DB.lock().unwrap().add_user(&login,&pass) {
+            if let Ok(res) = DB.lock().unwrap().add_user(login,pass) {
                 if res {
                     response.set_jwt_user(login);
                     response.redirect("/")

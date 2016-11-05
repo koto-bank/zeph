@@ -77,9 +77,13 @@ impl Db {
         Ok(())
     }
 
-    pub fn get_image(&self, id: i32) -> SQLResult<Image> {
-        let row = self.0.query("SELECT * FROM images WHERE id = $1", &[&id])?;
-        Ok(Db::extract_image(row.get(0)))
+    pub fn get_image(&self, id: i32) -> SQLResult<Option<Image>> {
+        let rows = self.0.query("SELECT * FROM images WHERE id = $1", &[&id])?;
+        Ok(if !rows.is_empty() {
+            Some(Db::extract_image(rows.get(0)))
+        } else {
+            None
+        })
     }
 
     pub fn get_images<T: Into<Option<i32>>>(&self, take: T, skip: usize) -> SQLResult<Vec<Image>>{

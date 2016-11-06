@@ -10,6 +10,11 @@ pub struct Image {
     pub score: i32
 }
 
+pub enum VoteImageError {
+    Already,
+    NoImage
+}
+
 #[derive(Debug,Clone)]
 enum AnyWith {
     After(String),

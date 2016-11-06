@@ -33,7 +33,7 @@ mod db;
 mod sync;
 mod commands;
 
-use db::Db;
+use db::{Db,VoteImageError};
 use sync::save_image;
 
 use std::sync::Mutex;
@@ -182,6 +182,36 @@ fn delete<'a, D>(request: &mut Request<D>, response: Response<'a, D>) -> Middlew
     response.redirect("/")
 }
 
+fn vote_image<'a, D>(request: &mut Request<D>, response: Response<'a, D>) -> MiddlewareResult<'a, D> {
+    let query = request.query() as *const nickel::Query;
+    let (id,vote) = unsafe { // Бяка, конечно, но query() почему-то берёт mutable reference и не даёт использовать другим
+        let q = &*query;
+        (q.get("id"),q.get("vote"))
+    };
+
+    if let (Some(id), Some(vote)) = (id,vote) {
+        if let Some(name) = request.authorized_user() {
+            if let Ok(vote) = vote.parse::<bool>() {
+                if let Ok(id) = id.parse::<i32>() {
+                    match DB.lock().unwrap().vote_image(&name, id, vote).unwrap() {
+                        Ok(newv)                        => response.send(newv.to_string()),
+                        Err(VoteImageError::Already)    => response.send("Already voted that"),
+                        Err(VoteImageError::NoImage)    => response.send("No such image")
+                    }
+                } else {
+                    response.send("Invalid id")
+                }
+            } else {
+                response.send("Invalid vote")
+            }
+        } else {
+            response.send("Not logged id")
+        }
+    } else {
+        response.send("No data")
+    }
+}
+
 fn main() {
     let mut server = Nickel::new();
 
@@ -195,6 +225,7 @@ fn main() {
         get "/get_image/:id" => get_image,
         get "/user_status" => user_status,
         get "/delete/:id" => delete,
+        get "/vote_image" => vote_image,
 
         post "/upload_image" => upload_image,
         post "/login" => login,

@@ -10,7 +10,7 @@ use self::postgres::rows::Row;
 
 pub struct Db(Connection);
 
-use super::{Image,Tag,AnyWith,ImageBuilder,parse_tag};
+use super::{Image,Tag,AnyWith,ImageBuilder,VoteImageError,parse_tag};
 
 impl Default for Db { // Чтобы Clippy не жаловался
     fn default() -> Self {
@@ -29,6 +29,7 @@ impl Db {
     pub fn new() -> Self {
         let conn = Connection::connect(format!("postgres://{}:{}@localhost", POSTGRES_LOGIN, POSTGRES_PASS), TlsMode::None).unwrap();
         conn.batch_execute("CREATE EXTENSION IF NOT EXISTS citext;
+                            CREATE EXTENSION IF NOT EXISTS hstore;
                             CREATE TABLE IF NOT EXISTS images(
                                 id SERIAL PRIMARY KEY,
                                 name TEXT NOT NULL UNIQUE,
@@ -44,7 +45,8 @@ impl Db {
                             CREATE TABLE IF NOT EXISTS users(
                                 id SERIAL PRIMARY KEY,
                                 name CITEXT UNIQUE NOT NULL,
-                                pass TEXT NOT NULL
+                                pass TEXT NOT NULL,
+                                votes HSTORE
                             );").unwrap();
         Db(conn)
     }
@@ -202,6 +204,35 @@ impl Db {
             let pass_hash = pass_hash.get(0).get::<_, String>("pass");
             Ok(Some(scrypt_check(pass, &pass_hash).unwrap()))
         }
+    }
+
+    // true - плюсик, false - минус, возвращает новое число голосов
+    pub fn vote_image(&self, login: &str, image_id: i32 ,vote: bool) -> SQLResult<Result<i32, VoteImageError>> {
+        let tr = self.0.transaction()?;
+        let votechar =  if vote { "+" } else { "-" }.to_string();
+        let previous = tr.query("SELECT votes -> $2 AS vote FROM users WHERE name = $1", &[&login, &image_id.to_string()])?;
+
+        let newcount = if !previous.is_empty() && previous.get(0).get::<_,Option<String>>("vote") == Some(votechar.to_string().clone()) {
+            tr.set_rollback();
+            Err(VoteImageError::Already)
+        } else {
+            let res = if vote {
+                tr.query("UPDATE images SET score = score + 1 WHERE id = $1 RETURNING score", &[&image_id])?
+            } else {
+                tr.query("UPDATE images SET score = score - 1 WHERE id = $1 RETURNING score", &[&image_id])?
+            };
+            if !res.is_empty() {
+                tr.set_commit();
+                Ok(res.get(0).get::<_,i32>("score"))
+            } else {
+                tr.set_rollback();
+                Err(VoteImageError::NoImage)
+            }
+        };
+
+        tr.execute("UPDATE users SET votes = hstore($2,$3) WHERE name = $1", &[&login, &image_id.to_string(), &votechar])?;
+
+        Ok(newcount)
     }
 
     fn extract_image(row: Row) -> Image {

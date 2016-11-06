@@ -80,3 +80,19 @@ body {
 #image-block {
     max-width: 50%;
 }
+
+.vote-up {
+    width: 0;
+    height: 0;
+    border-style: solid;
+    border-width: 0 7.5px 15px 7.5px;
+    border-color: transparent transparent #22ff00 transparent;
+}
+
+.vote-down {
+    width: 0;
+    height: 0;
+    border-style: solid;
+    border-width: 15px 7.5px 0 7.5px;
+    border-color: #ff0000 transparent transparent transparent;
+}

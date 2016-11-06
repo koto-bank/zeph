@@ -9,7 +9,9 @@ function httpGetAsync(theUrl, callback) {
 
 function load(){
     var reg = /show\/(\d+)/;
-    httpGetAsync(window.location.pathname.replace("show","get_image"), function(text){
+    var id = reg.exec(window.location.pathname)[1];
+
+    httpGetAsync("/get_image/" + id, function(text){
         var body = JSON.parse(text);
         var tags_block = document.getElementById("tags");
         var image_info = document.getElementById("image-info");
@@ -48,19 +50,59 @@ function load(){
             image_info.appendChild(document.createElement("br"));
         }
 
-        var score = document.createTextNode("Score: " + body["score"]);
-        image_info.appendChild(score);
-        image_info.appendChild(document.createElement("br"));
+        var vote_up_a = document.createElement("a");
+        vote_up_a.href = "#";
+        vote_up_a.style.display = "inline-block";
+        var vote_down_a = document.createElement("a");
+        vote_down_a.href = "#";
+        vote_down_a.style.display = "inline-block";
+
+        var vote_area = document.createElement("div");
+
+        var score = document.createElement("div");
+        score.textContent = "Score: " + body["score"];
+
+        vote_area.appendChild(score);
+
+        image_info.appendChild(vote_area);
 
         httpGetAsync("/user_status", function(text){
             var userstatus = JSON.parse(text);
             console.log(userstatus);
-            if (userstatus["logined"] == true && userstatus["name"] == body["uploader"]) {
-                var l = document.createElement("a");
-                l.href = window.location.pathname.replace("show","delete");
-                l.textContent = "Delete image";
-                image_info.appendChild(l);
-                image_info.appendChild(document.createElement("br"));
+            if (userstatus["logined"] == true) {
+                var plus_b = document.createElement("div");
+                plus_b.className = "vote-up";
+                plus_b.onclick = function() { httpGetAsync("/vote_image?vote=true&id=" + id, function(res){
+                    if (parseInt(res) !== NaN) {
+                        score.textContent = "Score: " + res;
+                    } else {
+                        score.textContent = res;
+                    }
+                })};
+                vote_up_a.appendChild(plus_b);
+
+                var minus_b = document.createElement("div");
+                minus_b.className = "vote-down";
+                minus_b.onclick = function() { httpGetAsync("/vote_image?vote=false&id=" + id, function(res){
+                    if (parseInt(res) !== NaN) {
+                        score.textContent = "Score: " + res;
+                    } else {
+                        score.textContent = res;
+                    }
+                })};
+
+                vote_down_a.appendChild(minus_b);
+
+                vote_area.appendChild(vote_up_a);
+                vote_area.appendChild(vote_down_a);
+
+                if (userstatus["name"] == body["uploader"]) {
+                    var l = document.createElement("a");
+                    l.href = "/delete/" + id;
+                    l.textContent = "Delete image";
+                    image_info.appendChild(l);
+                    image_info.appendChild(document.createElement("br"));
+                }
             }
         });
 

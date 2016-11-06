@@ -205,7 +205,7 @@ fn vote_image<'a, D>(request: &mut Request<D>, response: Response<'a, D>) -> Mid
                 response.send("Invalid vote")
             }
         } else {
-            response.send("Not logged id")
+            response.send("Not logged in")
         }
     } else {
         response.send("No data")

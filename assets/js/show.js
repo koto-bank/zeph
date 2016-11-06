@@ -69,7 +69,15 @@ function load(){
         httpGetAsync("/user_status", function(text){
             var userstatus = JSON.parse(text);
             console.log(userstatus);
-            if (userstatus["logined"] == true) {
+            if (userstatus["logined"] == true && userstatus["name"] == body["uploader"]) {
+                var l = document.createElement("a");
+                l.href = "/delete/" + id;
+                l.textContent = "Delete image";
+                image_info.appendChild(l);
+                image_info.appendChild(document.createElement("br"));
+            }
+
+            if (userstatus["logined"] == true && body["uploader"] != "sync") {
                 var plus_b = document.createElement("div");
                 plus_b.className = "vote-up";
                 plus_b.onclick = function() { httpGetAsync("/vote_image?vote=true&id=" + id, function(res){
@@ -95,14 +103,6 @@ function load(){
 
                 vote_area.appendChild(vote_up_a);
                 vote_area.appendChild(vote_down_a);
-
-                if (userstatus["name"] == body["uploader"]) {
-                    var l = document.createElement("a");
-                    l.href = "/delete/" + id;
-                    l.textContent = "Delete image";
-                    image_info.appendChild(l);
-                    image_info.appendChild(document.createElement("br"));
-                }
             }
         });
 

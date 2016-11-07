@@ -32,9 +32,10 @@ use rustc_serialize::json;
 mod db;
 mod sync;
 mod commands;
+mod utils;
 
 use db::{Db,VoteImageError};
-use sync::save_image;
+use utils::save_image;
 
 use std::sync::Mutex;
 use std::cell::RefCell;
@@ -42,7 +43,7 @@ use std::cell::RefCell;
 lazy_static! {
     pub static ref DB : Mutex<Db> = Mutex::new(Db::new());
     
-    /// Использование лежит в sync TODO: Сделать модуль utils?
+    /// Использование лежит в utils
     pub static ref OUTF : Mutex<RefCell<File>> = Mutex::new(RefCell::new(OpenOptions::new().append(true).create(true).open("OUTPUT").unwrap()));
 }
 

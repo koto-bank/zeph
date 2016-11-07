@@ -5,7 +5,8 @@ use std::fs::{OpenOptions};
 
 use std::time::Duration;
 
-use ::sync::{self,log};
+use ::sync;
+use ::utils::log;
 
 use std::collections::HashMap;
 

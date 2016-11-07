@@ -10,23 +10,29 @@ pub struct Image {
     pub score: i32
 }
 
+/// Ошибка при голосовании за картинку
 pub enum VoteImageError {
+    /// Уже голосовали за этот вариант
     Already,
+    ///Нет такой картинки
     NoImage
 }
 
+/// Запрос вида `*что-то` и `что-то*`
 #[derive(Debug,Clone)]
 enum AnyWith {
     After(String),
     Before(String)
 }
 
+/// Сортировка по ворастанию/убыванию
 #[derive(Debug,Clone)]
 enum AscDesc {
     Asc,
     Desc
 }
 
+/// Сортировка по запросу вида `sort:asc/desc:вид`
 #[derive(Debug,Clone)]
 enum OrderBy {
     Id,
@@ -35,12 +41,19 @@ enum OrderBy {
 
 #[derive(Debug,Clone)]
 enum Tag {
+    /// Обычный точный поиск
     Include(String),
+    /// -тэг
     Exclude(String),
+    /// rating:s,q,e
     Rating(Vec<String>),
+    /// *x и x*
     AnyWith(AnyWith),
+    /// from:derpibooru,konachan etc.
     From(Vec<String>),
+    /// uploader:имя1,имя2
     Uploader(Vec<String>),
+    /// sort:asc/desc:вид
     OrderBy(OrderBy, AscDesc)
 }
 

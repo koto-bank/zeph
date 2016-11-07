@@ -1,22 +1,19 @@
 extern crate hyper;
-extern crate image;
 
 use self::hyper::client::Client;
 use self::hyper::header::UserAgent;
 
-use std::io::{Read,Write};
-use std::fs::{File,read_dir,create_dir};
-use std::path::Path;
-use std::fmt::Display;
+use ::utils::*;
 
-pub use super::{DB,OUTF};
+use std::io::Read;
+use std::path::Path;
+
+pub use super::DB;
 use super::db::ImageBuilder;
 
 use rustc_serialize::json::Json;
 
 use std::sync::mpsc::{Receiver,TryRecvError};
-
-use self::image::FilterType;
 
 #[derive(Debug)]
 pub struct Image {
@@ -33,52 +30,6 @@ pub mod e621;
 pub mod derpy;
 pub mod danbooru;
 pub mod konachan;
-
-pub fn log<T: Display>(s: T) {
-    let outf = OUTF.lock().unwrap(); 
-    let mut outf = outf.borrow_mut();
-    writeln!(outf, "{}", s).unwrap();
-}
-
-/// Сохраняет картинку & создаёт к ней превью
-pub fn save_image(dir: &Path, name: &str, file: &[u8]) {
-    if read_dir("assets/images").is_err() { create_dir("assets/images").unwrap(); }
-    if read_dir("assets/images/preview").is_err() { create_dir("assets/images/preview").unwrap(); }
-
-    let prev = match image::load_from_memory(file) {
-        Ok(x) => x.resize(500, 500, FilterType::Nearest),
-        Err(x)  => {
-            log(x);
-            return
-        }
-    };
-
-    let mut f = File::create(dir.join(name)).unwrap();
-    let mut prevf = File::create(dir.join("preview").join(name)).unwrap();
-
-    f.write(file).unwrap();
-    prev.save(&mut prevf, image::JPEG).unwrap();
-}
-
-fn arr_eq<T: PartialEq>(first: &mut Vec<T>, second: &mut Vec<T>) -> bool {
-    first.dedup();
-    second.dedup();
-    first == second
-}
-
-
-// Включает ли второй массив первый
-fn includes<T: PartialEq>(first: &[T], second: &[T]) -> bool {
-    let r = first.len();
-    let mut c = 0;
-    for f in first {
-        if second.iter().any(|x| x == f) {
-            c += 1;
-        }
-    }
-
-    r == c
-}
 
 fn process_downloads(client: &Client, images: &[Image], recv: &Receiver<()>) -> Result<(),()> {
     let images_c = DB.lock().unwrap().get_images(None,0).unwrap();
@@ -153,7 +104,6 @@ fn download(client: &Client, im: &Image) -> Result<(), hyper::Error> {
 
 /// Запросить и распарсить JSON
 fn req_and_parse(client: &Client, url: &str) -> Result<Json, hyper::Error> {
-
     let mut res = match client.get(url)
         .header(UserAgent("Zeph/1.0".to_owned()))
         .send() {

@@ -20,7 +20,7 @@ use nickel::extensions::Redirect;
 
 use nickel_jwt_session::*;
 
-use std::fs::{File,remove_file};
+use std::fs::{File,OpenOptions,remove_file};
 use std::path::Path;
 use std::io::Read;
 use std::thread;
@@ -37,9 +37,11 @@ use db::{Db,VoteImageError};
 use sync::save_image;
 
 use std::sync::Mutex;
+use std::cell::RefCell;
 
 lazy_static! {
     pub static ref DB : Mutex<Db> = Mutex::new(Db::new());
+    pub static ref OUTF : Mutex<RefCell<File>> = Mutex::new(RefCell::new(OpenOptions::new().append(true).create(true).open("OUTPUT").unwrap()));
 }
 
 

@@ -5,10 +5,10 @@ use self::hyper::client::Client;
 use self::hyper::header::UserAgent;
 
 use std::io::{Read,Write};
-use std::fs::{File,OpenOptions,read_dir,create_dir};
+use std::fs::{File,read_dir,create_dir};
 use std::path::Path;
 
-pub use super::DB;
+pub use super::{DB,OUTF};
 use super::db::ImageBuilder;
 
 use rustc_serialize::json::Json;
@@ -69,10 +69,12 @@ fn includes<T: PartialEq>(first: &[T], second: &[T]) -> bool {
 
 fn process_downloads(client: &Client, images: &[Image], recv: &Receiver<()>) -> Result<(),()> {
     let images_c = DB.lock().unwrap().get_images(None,0).unwrap();
-    let mut outf = OpenOptions::new().append(true).create(true).open("OUTPUT").unwrap();
+
+    let outf = OUTF.lock().unwrap(); 
+    let mut outf = outf.borrow_mut();
 
     let printed = if includes(&images.iter().map(|x| x.name.clone()).collect::<Vec<_>>(), &images_c.iter().map(|x| x.name.clone()).collect::<Vec<_>>()) {
-        writeln!(&mut outf, "ALREADY DONE {} ~ {}", images.first().unwrap().name, images.last().unwrap().name).unwrap();
+        writeln!(outf, "ALREADY DONE {} ~ {}", images.first().unwrap().name, images.last().unwrap().name).unwrap();
         true
     } else { false };
 
@@ -90,10 +92,10 @@ fn process_downloads(client: &Client, images: &[Image], recv: &Receiver<()>) -> 
             } else {
                 download(client, im)
             } {
-                writeln!(&mut outf, "ERROR: {}; SKIP", er).unwrap();
+                writeln!(outf, "ERROR: {}; SKIP", er).unwrap();
                 continue
             } else {
-                writeln!(&mut outf, "DONE {}", im.name).unwrap();
+                writeln!(outf, "DONE {}", im.name).unwrap();
             }
         } else {
             let m_image = images_c.iter().find(|x| x.name == im.name ).unwrap();
@@ -108,9 +110,9 @@ fn process_downloads(client: &Client, images: &[Image], recv: &Receiver<()>) -> 
                     .score(im.score)
                     .finalize();
                 DB.lock().unwrap().add_image(&imb).unwrap();
-                writeln!(&mut outf, "UPDATE tags / score on {}", im.name).unwrap();
+                writeln!(outf, "UPDATE tags / score on {}", im.name).unwrap();
             } else if !printed {
-                writeln!(&mut outf, "ALREADY DONE {}", im.name).unwrap();
+                writeln!(outf, "ALREADY DONE {}", im.name).unwrap();
             }
         }
     }
@@ -141,13 +143,16 @@ fn download(client: &Client, im: &Image) -> Result<(), hyper::Error> {
 
 /// Запросить и распарсить JSON
 fn req_and_parse(client: &Client, url: &str) -> Result<Json, hyper::Error> {
-    let mut outf = OpenOptions::new().append(true).create(true).open("OUTPUT").unwrap();
+
+    let outf = OUTF.lock().unwrap();
+    let mut outf = outf.borrow_mut();
+
     let mut res = match client.get(url)
         .header(UserAgent("Zeph/1.0".to_owned()))
         .send() {
             Ok(x)   => x,
             Err(x)  => {
-                writeln!(&mut outf, "ERROR: {}", x).unwrap();
+                writeln!(outf, "ERROR: {}", x).unwrap();
                 return Err(x)
             }
         };

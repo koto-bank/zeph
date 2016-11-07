@@ -5,7 +5,7 @@ use std::fs::{OpenOptions};
 
 use std::time::Duration;
 
-use ::sync;
+use ::{sync, OUTF};
 
 use std::collections::HashMap;
 
@@ -15,7 +15,9 @@ pub fn main() {
 
     loop {
         let mut inf = OpenOptions::new().read(true).write(true).create(true).open("INPUT").unwrap();
-        let mut outf = OpenOptions::new().append(true).create(true).open("OUTPUT").unwrap();
+
+        let outf = OUTF.lock().unwrap();
+        let mut outf = outf.borrow_mut();
 
         let mut inputs = String::new();
         inf.read_to_string(&mut inputs).unwrap();
@@ -32,17 +34,17 @@ pub fn main() {
                         "e621"  => { thread::spawn(move || sync::e621::main(&recvr)); },
                         "dan"   => { thread::spawn(move || sync::danbooru::main(&recvr)); }
                         "kona"  => { thread::spawn(move || sync::konachan::main(&recvr)); }
-                        _       => { writeln!(&mut outf, "Error: function not found").unwrap(); }
+                        _       => { writeln!(outf, "Error: function not found").unwrap(); }
                     };
-                    writeln!(&mut outf, "ID: {}", id).unwrap();
+                    writeln!(outf, "ID: {}", id).unwrap();
                     id += 1;
-                } else { writeln!(&mut outf, "Use sync <name>").unwrap(); }
+                } else { writeln!(outf, "Use sync <name>").unwrap(); }
             } else if input.starts_with("kill") {
                 if let Some(input) = input.split_whitespace().collect::<Vec<_>>().get(1) {
                     if let Ok(id) = input.parse::<u32>() {
                         match senders.clone().get(&id) {
-                            Some(sender) => { let _ = sender.send(()); senders.remove(&id); writeln!(&mut outf, "Killed {}", id).unwrap(); },
-                            None => { writeln!(&mut outf ,"Error: No such id").unwrap(); }
+                            Some(sender) => { let _ = sender.send(()); senders.remove(&id); writeln!(outf, "Killed {}", id).unwrap(); },
+                            None => { writeln!(outf ,"Error: No such id").unwrap(); }
                         }
                     }
                 }

@@ -41,6 +41,8 @@ use std::cell::RefCell;
 
 lazy_static! {
     pub static ref DB : Mutex<Db> = Mutex::new(Db::new());
+    
+    /// Использование лежит в sync TODO: Сделать модуль utils?
     pub static ref OUTF : Mutex<RefCell<File>> = Mutex::new(RefCell::new(OpenOptions::new().append(true).create(true).open("OUTPUT").unwrap()));
 }
 

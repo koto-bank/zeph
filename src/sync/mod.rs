@@ -7,6 +7,7 @@ use self::hyper::header::UserAgent;
 use std::io::{Read,Write};
 use std::fs::{File,read_dir,create_dir};
 use std::path::Path;
+use std::fmt::Display;
 
 pub use super::{DB,OUTF};
 use super::db::ImageBuilder;
@@ -33,12 +34,24 @@ pub mod derpy;
 pub mod danbooru;
 pub mod konachan;
 
+pub fn log<T: Display>(s: T) {
+    let outf = OUTF.lock().unwrap(); 
+    let mut outf = outf.borrow_mut();
+    writeln!(outf, "{}", s).unwrap();
+}
+
 /// Сохраняет картинку & создаёт к ней превью
 pub fn save_image(dir: &Path, name: &str, file: &[u8]) {
     if read_dir("assets/images").is_err() { create_dir("assets/images").unwrap(); }
     if read_dir("assets/images/preview").is_err() { create_dir("assets/images/preview").unwrap(); }
 
-    let prev = image::load_from_memory(file).unwrap().resize(500, 500, FilterType::Nearest);
+    let prev = match image::load_from_memory(file) {
+        Ok(x) => x.resize(500, 500, FilterType::Nearest),
+        Err(x)  => {
+            log(x);
+            return
+        }
+    };
 
     let mut f = File::create(dir.join(name)).unwrap();
     let mut prevf = File::create(dir.join("preview").join(name)).unwrap();
@@ -70,11 +83,8 @@ fn includes<T: PartialEq>(first: &[T], second: &[T]) -> bool {
 fn process_downloads(client: &Client, images: &[Image], recv: &Receiver<()>) -> Result<(),()> {
     let images_c = DB.lock().unwrap().get_images(None,0).unwrap();
 
-    let outf = OUTF.lock().unwrap(); 
-    let mut outf = outf.borrow_mut();
-
     let printed = if includes(&images.iter().map(|x| x.name.clone()).collect::<Vec<_>>(), &images_c.iter().map(|x| x.name.clone()).collect::<Vec<_>>()) {
-        writeln!(outf, "ALREADY DONE {} ~ {}", images.first().unwrap().name, images.last().unwrap().name).unwrap();
+        log(format!("ALREADY DONE {} ~ {}", images.first().unwrap().name, images.last().unwrap().name));
         true
     } else { false };
 
@@ -92,10 +102,10 @@ fn process_downloads(client: &Client, images: &[Image], recv: &Receiver<()>) -> 
             } else {
                 download(client, im)
             } {
-                writeln!(outf, "ERROR: {}; SKIP", er).unwrap();
+                log(format!("ERROR: {}; SKIP", er));
                 continue
             } else {
-                writeln!(outf, "DONE {}", im.name).unwrap();
+                log(format!( "DONE {}", im.name));
             }
         } else {
             let m_image = images_c.iter().find(|x| x.name == im.name ).unwrap();
@@ -110,9 +120,9 @@ fn process_downloads(client: &Client, images: &[Image], recv: &Receiver<()>) -> 
                     .score(im.score)
                     .finalize();
                 DB.lock().unwrap().add_image(&imb).unwrap();
-                writeln!(outf, "UPDATE tags / score on {}", im.name).unwrap();
+                log(format!("UPDATE tags / score on {}", im.name));
             } else if !printed {
-                writeln!(outf, "ALREADY DONE {}", im.name).unwrap();
+                log(format!("ALREADY DONE {}", im.name));
             }
         }
     }
@@ -149,9 +159,7 @@ fn req_and_parse(client: &Client, url: &str) -> Result<Json, hyper::Error> {
         .send() {
             Ok(x)   => x,
             Err(x)  => {
-                let outf = OUTF.lock().unwrap();
-                let mut outf = outf.borrow_mut();
-                writeln!(outf, "ERROR: {}", x).unwrap();
+                log(format!("ERROR: {}", x));
                 return Err(x)
             }
         };

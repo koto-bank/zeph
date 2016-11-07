@@ -1,11 +1,11 @@
-use std::io::{Read,Write};
+use std::io::Read;
 use std::sync::mpsc;
 use std::thread;
 use std::fs::{OpenOptions};
 
 use std::time::Duration;
 
-use ::{sync, OUTF};
+use ::sync::{self,log};
 
 use std::collections::HashMap;
 
@@ -15,9 +15,6 @@ pub fn main() {
 
     loop {
         let mut inf = OpenOptions::new().read(true).write(true).create(true).open("INPUT").unwrap();
-
-        let outf = OUTF.lock().unwrap();
-        let mut outf = outf.borrow_mut();
 
         let mut inputs = String::new();
         inf.read_to_string(&mut inputs).unwrap();
@@ -34,17 +31,17 @@ pub fn main() {
                         "e621"  => { thread::spawn(move || sync::e621::main(&recvr)); },
                         "dan"   => { thread::spawn(move || sync::danbooru::main(&recvr)); }
                         "kona"  => { thread::spawn(move || sync::konachan::main(&recvr)); }
-                        _       => { writeln!(outf, "Error: function not found").unwrap(); }
+                        _       => { log("Error: function not found") }
                     };
-                    writeln!(outf, "ID: {}", id).unwrap();
+                    log(format!("ID: {}", id));
                     id += 1;
-                } else { writeln!(outf, "Use sync <name>").unwrap(); }
+                } else { log("Use sync <name>") }
             } else if input.starts_with("kill") {
                 if let Some(input) = input.split_whitespace().collect::<Vec<_>>().get(1) {
                     if let Ok(id) = input.parse::<u32>() {
                         match senders.clone().get(&id) {
-                            Some(sender) => { let _ = sender.send(()); senders.remove(&id); writeln!(outf, "Killed {}", id).unwrap(); },
-                            None => { writeln!(outf ,"Error: No such id").unwrap(); }
+                            Some(sender) => { let _ = sender.send(()); senders.remove(&id); log(format!("Killed {}", id)) },
+                            None => { log("Error: No such id") }
                         }
                     }
                 }

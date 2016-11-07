@@ -144,14 +144,13 @@ fn download(client: &Client, im: &Image) -> Result<(), hyper::Error> {
 /// Запросить и распарсить JSON
 fn req_and_parse(client: &Client, url: &str) -> Result<Json, hyper::Error> {
 
-    let outf = OUTF.lock().unwrap();
-    let mut outf = outf.borrow_mut();
-
     let mut res = match client.get(url)
         .header(UserAgent("Zeph/1.0".to_owned()))
         .send() {
             Ok(x)   => x,
             Err(x)  => {
+                let outf = OUTF.lock().unwrap();
+                let mut outf = outf.borrow_mut();
                 writeln!(outf, "ERROR: {}", x).unwrap();
                 return Err(x)
             }

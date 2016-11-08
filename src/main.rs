@@ -42,7 +42,7 @@ use std::cell::RefCell;
 
 lazy_static! {
     pub static ref DB : Mutex<Db> = Mutex::new(Db::new());
-    
+
     /// Использование лежит в utils
     pub static ref OUTF : Mutex<RefCell<File>> = Mutex::new(RefCell::new(OpenOptions::new().append(true).create(true).open("OUTPUT").unwrap()));
 }
@@ -57,12 +57,6 @@ macro_rules! routes(
         }
      };
 );
-
-#[derive(RustcEncodable)]
-struct UserStatus {
-    logined: bool,
-    name: Option<String>
-}
 
 fn index_n_search<'a, D>(_request: &mut Request<D>, response: Response<'a, D>) -> MiddlewareResult<'a, D> {
     response.render("src/templates/index.html", &[0]) // Вот тут и ниже так надо, чтобы не пересобирать программу при изменении HTML
@@ -166,6 +160,13 @@ fn login<'a, D>(request: &mut Request<D>, mut response: Response<'a, D>) -> Midd
 }
 
 fn user_status<'a, D>(request: &mut Request<D>, mut response: Response<'a, D>) -> MiddlewareResult<'a, D> {
+
+    #[derive(RustcEncodable)]
+    struct UserStatus {
+        logined: bool,
+        name: Option<String>
+    }
+
     response.set(MediaType::Json);
 
     let (logined,name) = match request.authorized_user() {
@@ -196,18 +197,14 @@ fn vote_image<'a, D>(request: &mut Request<D>, response: Response<'a, D>) -> Mid
 
     if let (Some(id), Some(vote)) = (id,vote) {
         if let Some(name) = request.authorized_user() {
-            if let Ok(vote) = vote.parse::<bool>() {
-                if let Ok(id) = id.parse::<i32>() {
-                    match DB.lock().unwrap().vote_image(&name, id, vote).unwrap() {
-                        Ok(newv)                        => response.send(newv.to_string()),
-                        Err(VoteImageError::Already)    => response.send("Already voted that"),
-                        Err(VoteImageError::NoImage)    => response.send("No such image")
-                    }
-                } else {
-                    response.send("Invalid id")
+            if let (Ok(vote),Ok(id)) = (vote.parse::<bool>(),id.parse::<i32>()) {
+                match DB.lock().unwrap().vote_image(&name, id, vote).unwrap() {
+                    Ok(newv)                        => response.send(newv.to_string()),
+                    Err(VoteImageError::Already)    => response.send("Already voted that"),
+                    Err(VoteImageError::NoImage)    => response.send("No such image")
                 }
             } else {
-                response.send("Invalid vote")
+                response.send("Invalid data")
             }
         } else {
             response.send("Not logged in")

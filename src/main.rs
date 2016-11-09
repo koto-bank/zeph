@@ -24,6 +24,7 @@ use std::fs::{File,OpenOptions,remove_file};
 use std::path::Path;
 use std::io::Read;
 use std::thread;
+use std::collections::HashMap;
 
 use multipart::server::{Multipart, SaveResult};
 
@@ -62,8 +63,12 @@ fn index_n_search<'a, D>(_request: &mut Request<D>, response: Response<'a, D>) -
     response.render("src/templates/index.html", &[0]) // Вот тут и ниже так надо, чтобы не пересобирать программу при изменении HTML
 }
 
-fn show<'a, D>(_request: &mut Request<D>, response: Response<'a, D>) -> MiddlewareResult<'a, D> {
-    response.render("src/templates/show.html", &[0])
+fn show<'a, D>(request: &mut Request<D>, response: Response<'a, D>) -> MiddlewareResult<'a, D> {
+    let mut data = HashMap::new();
+    let id = request.param("id").unwrap().parse::<i32>().unwrap();
+    let cont = DB.lock().unwrap().get_image(id).unwrap();
+    data.insert("image", cont);
+    response.render("src/templates/show.html", &data)
 }
 
 fn upload_image<'mw>(req: &mut Request, mut res: Response<'mw>) -> MiddlewareResult<'mw> {
@@ -97,12 +102,6 @@ fn upload_image<'mw>(req: &mut Request, mut res: Response<'mw>) -> MiddlewareRes
     } else {
         res.error(StatusCode::Forbidden, "Not logged in")
     }
-}
-
-fn get_image<'a, D>(request: &mut Request<D>, mut response: Response<'a, D>) -> MiddlewareResult<'a, D> {
-    let id = request.param("id").unwrap().parse::<i32>().unwrap();
-    response.set(MediaType::Json);
-    response.send(json::encode(&DB.lock().unwrap().get_image(id).unwrap()).unwrap())
 }
 
 fn more<'a, D>(request: &mut Request<D>, mut response: Response<'a, D>) -> MiddlewareResult<'a, D> {
@@ -224,7 +223,6 @@ fn main() {
         get "/","/search" => index_n_search,
         get "/show/:id" => show,
         get "/more" => more,
-        get "/get_image/:id" => get_image,
         get "/user_status" => user_status,
         get "/delete/:id" => delete,
         get "/vote_image" => vote_image,

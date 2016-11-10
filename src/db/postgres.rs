@@ -212,7 +212,7 @@ impl Db {
         let votechar =  if vote { "+" } else { "-" }.to_string();
         let previous = tr.query("SELECT votes -> $2 AS vote FROM users WHERE name = $1", &[&login, &image_id.to_string()])?;
 
-        let newcount = if !previous.is_empty() && previous.get(0).get::<_,Option<String>>("vote") == Some(votechar.to_string().clone()) {
+        let newcount = if !previous.is_empty() && previous.get(0).get::<_,Option<String>>("vote") == Some(votechar.to_owned()) {
             tr.set_rollback();
             Err(VoteImageError::Already)
         } else {

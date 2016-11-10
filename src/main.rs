@@ -120,15 +120,19 @@ fn adduser<'a, D>(request: &mut Request<D>, mut response: Response<'a, D>) -> Mi
     let body = try_with!(response, request.form_body());
     if let (Some(login), Some(pass), Some(confirm_pass)) = (body.get("login"), body.get("password"),body.get("confirm_password")) {
         if pass == confirm_pass {
-            if let Ok(res) = DB.lock().unwrap().add_user(login,pass) {
-                if res {
-                    response.set_jwt_user(login);
-                    response.redirect("/")
+            if !pass.trim().is_empty() && !login.trim().is_empty() {
+                if let Ok(res) = DB.lock().unwrap().add_user(login,pass) {
+                    if res {
+                        response.set_jwt_user(login);
+                        response.redirect("/")
+                    } else {
+                        response.send("User already exists")
+                    }
                 } else {
-                    response.send("User already exists")
+                    response.error(StatusCode::InternalServerError, "Internal server error")
                 }
             } else {
-                response.error(StatusCode::InternalServerError, "Internal server error")
+                response.send("Empty login/pass")
             }
         } else {
             response.send("Password and confirmation are not equeal")

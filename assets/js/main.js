@@ -39,6 +39,7 @@ function loadMore() {
         }
 
         body.forEach(function(image) {
+            console.log(image);
             var link = document.createElement("a");
             link.href = "/show/"+image.id;
             link.target = "_blank";
@@ -189,7 +190,7 @@ function showUploadOrLogin() {
 
 window.onload = function() {
     loadMore();
-    drawUploadOrLogin();
+    //drawUploadOrLogin();
 
     document.getElementById("tag-search-field").value = getUrlParameter("q");
 }

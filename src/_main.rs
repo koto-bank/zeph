@@ -59,17 +59,17 @@ macro_rules! routes(
      };
 );
 
-fn index_n_search<'a, D>(_request: &mut Request<D>, response: Response<'a, D>) -> MiddlewareResult<'a, D> {
+/*fn index_n_search<'a, D>(_request: &mut Request<D>, response: Response<'a, D>) -> MiddlewareResult<'a, D> {
     response.render("src/templates/index.html", &[0]) // Вот тут и ниже так надо, чтобы не пересобирать программу при изменении HTML
-}
+}*/
 
-fn show<'a, D>(request: &mut Request<D>, response: Response<'a, D>) -> MiddlewareResult<'a, D> {
+/*fn show<'a, D>(request: &mut Request<D>, response: Response<'a, D>) -> MiddlewareResult<'a, D> {
     let mut data = HashMap::new();
     let id = request.param("id").unwrap().parse::<i32>().unwrap();
     let cont = DB.lock().unwrap().get_image(id).unwrap();
     data.insert("image", cont);
     response.render("src/templates/show.html", &data)
-}
+}*/
 
 fn upload_image<'mw>(req: &mut Request, mut res: Response<'mw>) -> MiddlewareResult<'mw> {
     if let Some(username) = req.authorized_user() {
@@ -104,7 +104,7 @@ fn upload_image<'mw>(req: &mut Request, mut res: Response<'mw>) -> MiddlewareRes
     }
 }
 
-fn more<'a, D>(request: &mut Request<D>, mut response: Response<'a, D>) -> MiddlewareResult<'a, D> {
+/*fn more<'a, D>(request: &mut Request<D>, mut response: Response<'a, D>) -> MiddlewareResult<'a, D> {
     let offset = request.query().get("offset").unwrap().parse::<usize>().unwrap();
 
     let images = match request.query().get("q") {
@@ -114,7 +114,7 @@ fn more<'a, D>(request: &mut Request<D>, mut response: Response<'a, D>) -> Middl
 
     response.set(MediaType::Json);
     response.send(json::encode(&images).unwrap())
-}
+}*/
 
 fn adduser<'a, D>(request: &mut Request<D>, mut response: Response<'a, D>) -> MiddlewareResult<'a, D> {
     let body = try_with!(response, request.form_body());

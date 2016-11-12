@@ -17,8 +17,10 @@ use rustc_serialize::json;
 
 use iron::prelude::*;
 use iron::status;
-use hyper::header::ContentType;
 use iron::mime::{Mime, TopLevel, SubLevel, Attr, Value};
+use iron::modifiers::RedirectRaw as Redirect;
+
+use hyper::header::ContentType;
 
 use staticfile::Static;
 use mount::Mount;
@@ -26,7 +28,7 @@ use urlencoded::UrlEncodedQuery;
 use router::Router;
 
 use std::path::Path;
-use std::fs::{File,OpenOptions};
+use std::fs::{File,OpenOptions,remove_file};
 
 mod db;
 mod sync;
@@ -162,11 +164,26 @@ fn show(req: &mut Request) -> IronResult<Response> {
     Ok(Response::with((status::Ok, page)))
 }
 
+fn delete(req: &mut Request) -> IronResult<Response> {
+    let mut response = Response::new();
+
+    let id = req.extensions.get::<Router>().and_then(|x| x.find("id")).and_then(|x| x.parse::<i32>().ok()).unwrap();
+    let name = DB.lock().unwrap().delete_image(id).unwrap();
+    remove_file(format!("assets/images/{}", name)).unwrap();
+    remove_file(format!("assets/images/preview/{}", name)).unwrap();
+    response
+        .set_mut(Redirect("/".to_string()))
+        .set_mut(status::PermanentRedirect);
+    Ok(response)
+}
+
 fn main() {
-    let router = router!(index: get "/" => index_n_search,
-                         more: get "/more" => more,
-                         search: get "/search" => index_n_search,
-                         show: get "/show/:id" => show);
+    let router = router!(index:     get "/" => index_n_search,
+                         more:      get "/more" => more,
+                         search:    get "/search" => index_n_search,
+
+                         show:      get "/show/:id" => show,
+                         delete:    get "/delete/:id" => delete);
 
     let mut mount = Mount::new();
     mount.mount("/", router)

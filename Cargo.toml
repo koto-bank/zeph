@@ -4,9 +4,19 @@ version = "0.1.0"
 authors = ["TyanNN <tyannn@cocaine.ninja>"]
 
 [dependencies]
-multipart = { version = "*", features = [ "nickel_" ] }
-nickel = "*"
-nickel-jwt-session = "*"
+multipart = { version = "*", features = [ "iron" ] }
+
+iron = "*"
+router = "*"
+staticfile = "*"
+mount = { version = "*", git = "https://github.com/iron/mount.git" }
+urlencoded = "*"
+iron-sessionstorage = "*"
+
+maud = {version = "*", features = [ "iron" ] }
+maud_macros = "*"
+
+# Сессия
 
 rustc-serialize = "*"
 hyper = "*"

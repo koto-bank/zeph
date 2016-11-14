@@ -24,9 +24,8 @@ function setAttrs(elem, attrs) {
 }
 
 function loadMore() {
-    var image_block = document.getElementById("images");
-    let count = image_block.children.length;
-    var query = "/more?offset="+count;
+    var image_block = document.getElementById("images");;
+    var query = "/more?offset="+image_block.children.length;
 
     if (window.location.pathname.startsWith("/search")) {
         query = query + "&q=" + getUrlParameter("q");

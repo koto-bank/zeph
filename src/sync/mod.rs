@@ -30,6 +30,7 @@ pub mod e621;
 pub mod derpy;
 pub mod danbooru;
 pub mod konachan;
+pub mod gelbooru;
 
 fn process_downloads(client: &Client, images: &[Image], recv: &Receiver<()>) -> Result<(),()> {
     let images_c = DB.lock().unwrap().get_images(None,0).unwrap();

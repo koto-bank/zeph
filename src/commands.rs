@@ -32,6 +32,7 @@ pub fn main() {
                         "e621"  => { thread::spawn(move || sync::e621::main(&recvr)); },
                         "dan"   => { thread::spawn(move || sync::danbooru::main(&recvr)); }
                         "kona"  => { thread::spawn(move || sync::konachan::main(&recvr)); }
+                        "gel"   => { thread::spawn(move || sync::gelbooru::main(&recvr)); }
                         _       => { log("Error: function not found") }
                     };
                     log(format!("ID: {}", id));

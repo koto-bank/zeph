@@ -19,7 +19,7 @@ function getUrlParameter(name) {
 
 function setAttrs(elem, attrs) {
     for (var a in attrs) {
-        elem.setAttribute(a, attrs[a])
+        elem.setAttribute(a, attrs[a]);
     }
 }
 
@@ -35,7 +35,7 @@ function loadMore() {
     httpGetAsync(query, function(text){
         var body = JSON.parse(text);
         if (body.length < LOAD_AT_A_TIME) {
-            document.getElementById("more-button").parentNode.removeChild(document.getElementById("more-button"))
+            document.getElementById("more-button").parentNode.removeChild(document.getElementById("more-button"));
         }
 
         body.forEach(function(image) {
@@ -56,7 +56,7 @@ function loadMore() {
             var tags_block = document.getElementById("tags");
             var tags = new Set(imgs.reduce(function(arr, im) {
                 arr.push(im.title.split(" ")[0]);
-                return arr
+                return arr;
             },[]));
 
             tags.forEach(function(tag) {
@@ -85,13 +85,13 @@ function drawUploadOrLogin() {
                 method: "POST"
             });
 
-            var login = document.createElement("input")
+            var login = document.createElement("input");
             setAttrs(login,{
                 type: "text",
                 name: "login",
                 placeholder: "Login"
             });
-            var pass = document.createElement("input")
+            var pass = document.createElement("input");
             setAttrs(pass, {
                 type: "password",
                 name: "password",
@@ -115,26 +115,26 @@ function drawUploadOrLogin() {
             lor.textContent = "Sign up";
             lor.onclick = function() {
                 if (lor.textContent == "Sign up") {
-                    lor.textContent = "Sign in"
-                    sbm.value = "Register"
-                    login.placeholder = "New login"
-                    pass.placeholder = "New password"
+                    lor.textContent = "Sign in";
+                    sbm.value = "Register";
+                    login.placeholder = "New login";
+                    pass.placeholder = "New password";
 
-                    form.action = "/adduser"
+                    form.action = "/adduser";
 
                     form.insertBefore(confirm_pass, sbm);
-                    form.insertBefore(confirm_pass_br, sbm)
+                    form.insertBefore(confirm_pass_br, sbm);
                 } else {
-                    lor.textContent = "Sign up"
-                    sbm.value = "Login"
-                    login.placeholder = "Login"
-                    pass.placeholder = "Password"
+                    lor.textContent = "Sign up";
+                    sbm.value = "Login";
+                    login.placeholder = "Login";
+                    pass.placeholder = "Password";
 
-                    form.action = "/login"
+                    form.action = "/login";
 
                     try {
                         form.removeChild(confirm_pass);
-                        form.removeChild(confirm_pass_br)
+                        form.removeChild(confirm_pass_br);
                     } catch(err) { }
                 }
             }
@@ -155,12 +155,12 @@ function drawUploadOrLogin() {
                 method: "POST",
                 enctype: "multipart/form-data"
             });
-            var file = document.createElement("input")
+            var file = document.createElement("input");
             setAttrs(file, {
                 type: "file",
                 name: "image",
                 accept: "image/*"});
-            var tags = document.createElement("input")
+            var tags = document.createElement("input");
             setAttrs(tags,{
                 type: "text",
                 name: "tags",
@@ -181,9 +181,9 @@ function showUploadOrLogin() {
     var form = document.getElementById("login-or-upload-form");
 
     if (form.style.bottom != "7%") {
-        form.style.bottom = "7%"
+        form.style.bottom = "7%";
     } else {
-        form.style.bottom = "-100%"
+        form.style.bottom = "-100%";
     }
 }
 

@@ -29,7 +29,7 @@ function load(){
             var l = document.createElement("a");
             l.href = "/delete/" + id;
             l.textContent = "Delete image";
-            
+
             image_info.insertBefore(l, image_info.firstChild);
             image_info.insertBefore(document.createElement("br"), l.nextSibling);
         }

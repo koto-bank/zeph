@@ -1,4 +1,6 @@
-const LOAD_AT_A_TIME = 25;
+var LOAD_AT_A_TIME = 25; // Сколько картинок за раз грузить
+var DONE_LOADING = false; // Все ли картинки загружены
+var LOADING_IN_PROGRESS = false; // Грузится ли сейчас картинки
 
 function httpGetAsync(theUrl, callback) {
     var xmlHttp = new XMLHttpRequest();
@@ -69,6 +71,7 @@ function load(){
 }
 
 function loadSimiliar() {
+    LOADING_IN_PROGRESS = true;
     var reg = /show\/(\d+)/;
     var id = reg.exec(window.location.pathname)[1];
     
@@ -78,7 +81,7 @@ function loadSimiliar() {
     httpGetAsync(query, function(text){
         var body = JSON.parse(text);
         if (body.length < LOAD_AT_A_TIME) {
-            document.getElementById("more-button").parentNode.removeChild(document.getElementById("more-button"));
+            DONE_LOADING = true;
         }
 
         body.forEach(function(image) {
@@ -93,6 +96,7 @@ function loadSimiliar() {
             link.appendChild(im);
             similiar_block.appendChild(link);
         });
+        LOADING_IN_PROGRESS = false;
     });
 }
 
@@ -100,3 +104,11 @@ window.onload = function() {
     load();
     loadSimiliar();
 }
+
+window.onscroll = function(ev) {
+    if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight) {
+        if (!DONE_LOADING && !LOADING_IN_PROGRESS){
+            loadSimiliar();
+        }
+    }
+};

@@ -108,7 +108,6 @@ fn index_n_search(_req: &mut Request) -> IronResult<Response> {
                 div#tags {} // Тэги через JS
             }
             div#images {} // Картинки через JS
-            button#more-button onclick="loadMore()" "More"
             button#upload-button onclick="showUploadOrLogin()" "Login"
             div#login-or-upload-form / // Форма через JS
         }
@@ -194,7 +193,6 @@ fn show(req: &mut Request) -> IronResult<Response> {
                 }
                 h4 style="margin-top: 2%;" { "Similiar images" } br /
                 div#similiar {} // Похожие через JS
-                button#more-button onclick="loadSimiliar()" "More"
             }
         }
     };

@@ -1,5 +1,7 @@
-var LOAD_AT_A_TIME = 25;
-var TAGS_SET = false;
+var LOAD_AT_A_TIME = 25; // Сколько картинок за раз грузить
+var TAGS_SET = false; // Выставлены ли тэги сбоку
+var DONE_LOADING = false; // Все ли картинки загружены
+var LOADING_IN_PROGRESS = false; // Грузится ли сейчас картинки
 
 function httpGetAsync(theUrl, callback) {
     var xmlHttp = new XMLHttpRequest();
@@ -23,7 +25,14 @@ function setAttrs(elem, attrs) {
     }
 }
 
+function checkVisible(elm) {
+  var rect = elm.getBoundingClientRect();
+  var viewHeight = Math.max(document.documentElement.clientHeight, window.innerHeight);
+  return !(rect.bottom < 0 || rect.top - viewHeight >= 0);
+}
+
 function loadMore() {
+    LOADING_IN_PROGRESS = true;
     var image_block = document.getElementById("images");;
     var query = "/more?offset="+image_block.children.length;
 
@@ -34,7 +43,7 @@ function loadMore() {
     httpGetAsync(query, function(text){
         var body = JSON.parse(text);
         if (body.length < LOAD_AT_A_TIME) {
-            document.getElementById("more-button").parentNode.removeChild(document.getElementById("more-button"));
+            DONE_LOADING = true;
         }
 
         body.forEach(function(image) {
@@ -67,6 +76,7 @@ function loadMore() {
             });
             TAGS_SET = true
         }
+         LOADING_IN_PROGRESS = false;
     });
 }
 
@@ -192,3 +202,11 @@ window.onload = function() {
 
     document.getElementById("tag-search-field").value = getUrlParameter("q");
 }
+
+window.onscroll = function(ev) {
+    if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight) {
+        if (!DONE_LOADING && !LOADING_IN_PROGRESS){
+            loadMore();
+        }
+    }
+};

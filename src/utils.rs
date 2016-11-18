@@ -11,7 +11,7 @@ use ::OUTF;
 
 /// Написать в `OUTPUT`
 pub fn log<T: Display>(s: T) {
-    let outf = OUTF.lock().unwrap(); 
+    let outf = OUTF.lock().unwrap();
     let mut outf = outf.borrow_mut();
     writeln!(outf, "{}", s).unwrap();
 }
@@ -37,9 +37,9 @@ pub fn save_image(dir: &Path, name: &str, file: &[u8]) {
 }
 
 /// Равны ли массивы
-pub fn arr_eq<T: PartialEq>(first: &mut Vec<T>, second: &mut Vec<T>) -> bool {
-    first.dedup();
-    second.dedup();
+pub fn arr_eq<T: Ord + PartialEq>(first: &mut Vec<T>, second: &mut Vec<T>) -> bool {
+    first.sort();
+    second.sort();
     first == second
 }
 
@@ -55,4 +55,19 @@ pub fn includes<T: PartialEq>(first: &[T], second: &[T]) -> bool {
     }
 
     r == c
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn arr_eq_test() {
+        assert!(arr_eq(&mut vec!["first".to_string(), "second".to_string()],&mut vec!["second".to_string(), "first".to_string()]));
+    }
+
+    #[test]
+    fn arr_incl_test() {
+        assert!(includes(&vec!["a","b"], &vec!["a", "b", "c"]));
+    }
 }

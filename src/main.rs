@@ -184,6 +184,7 @@ fn show(req: &mut Request) -> IronResult<Response> {
     Ok(Response::with((status::Ok, page)))
 }
 
+
 fn delete(req: &mut Request) -> IronResult<Response> {
     let mut response = Response::new();
 

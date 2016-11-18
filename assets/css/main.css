@@ -48,7 +48,7 @@ body {
     margin-top: 25px;
 }
 
-#images, #similiar {
+#images {
     margin-left: 15%;
     overflow-x: auto;
 }
@@ -79,6 +79,10 @@ body {
 
 #image-block {
     max-width: 50%;
+}
+
+#similiar {
+    overflow-x: auto;
 }
 
 .vote-up {

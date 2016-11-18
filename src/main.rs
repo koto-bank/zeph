@@ -188,12 +188,14 @@ fn show(req: &mut Request) -> IronResult<Response> {
                     }
                 }
             }
-            a href={ "/images/" (image.name) } {
-                img#image-block style="display: block; margin: 0 auto;" src={ "/images/" (image.name) } /
+            div style="margin-left: 15%;" {
+                a href={ "/images/" (image.name) } {
+                    img#image-block style="display: block; margin: 0 auto;" src={ "/images/" (image.name) } /
+                }
+                h4 style="margin-top: 2%;" { "Similiar images" } br /
+                div#similiar {} // Похожие через JS
+                button#more-button onclick="loadSimiliar()" "More"
             }
-            h4 style="margin-left: 15%; margin-top: 2%;" { "Similiar images" } br /
-            div#similiar {} // Похожие через JS
-            button#more-button onclick="loadSimiliar()" "More"
         }
     };
 

@@ -28,6 +28,8 @@ impl Db {
         let conn = Connection::connect(format!("postgres://{}:{}@localhost", config!("postgres-login"), config!("postgres-password")), TlsMode::None).unwrap();
         conn.batch_execute("CREATE EXTENSION IF NOT EXISTS citext;
                             CREATE EXTENSION IF NOT EXISTS hstore;
+                            CREATE EXTENSION IF NOT EXISTS smlar;
+
                             CREATE TABLE IF NOT EXISTS images(
                                 id SERIAL PRIMARY KEY,
                                 name TEXT NOT NULL UNIQUE,
@@ -240,8 +242,9 @@ impl Db {
         };
 
         Ok(self.0.query(&format!("SELECT * FROM images
-                                 WHERE tags && (SELECT tags FROM images WHERE id = $1)
-                                 AND id != $1 LIMIT {} OFFSET {}", take, skip as i32),&[&id])?
+                                    WHERE id != $1
+                                    ORDER BY smlar(tags, (SELECT tags FROM images WHERE id = $1)) DESC
+                                    LIMIT {} OFFSET {}", take, skip as i32),&[&id])?
            .iter().fold(Vec::new(), |mut acc, row| {
                acc.push(Db::extract_image(row));
                acc

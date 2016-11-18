@@ -192,7 +192,7 @@ fn show(req: &mut Request) -> IronResult<Response> {
                 img#image-block style="display: block; margin: 0 auto;" src={ "/images/" (image.name) } /
             }
             h4 style="margin-left: 15%; margin-top: 2%;" { "Similiar images" } br /
-            div#similiar / // Похожие через JS
+            div#similiar {} // Похожие через JS
             button#more-button onclick="loadSimiliar()" "More"
         }
     };

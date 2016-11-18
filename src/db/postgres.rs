@@ -11,6 +11,7 @@ use self::postgres::rows::Row;
 pub struct Db(Connection);
 
 use super::{Image,Tag,AnyWith,ImageBuilder,VoteImageError,parse_tag};
+use super::super::CONFIG;
 
 impl Default for Db { // Чтобы Clippy не жаловался
     fn default() -> Self {
@@ -18,16 +19,13 @@ impl Default for Db { // Чтобы Clippy не жаловался
     }
 }
 
-static POSTGRES_LOGIN : &'static str = "easy";
-static POSTGRES_PASS : &'static str = "";
-
 lazy_static! {
     static ref SCRYPT_PARAMS: ScryptParams = ScryptParams::new(10, 8, 1); // 10 сильно быстрее чем 14
 }
 
 impl Db {
     pub fn new() -> Self {
-        let conn = Connection::connect(format!("postgres://{}:{}@localhost", POSTGRES_LOGIN, POSTGRES_PASS), TlsMode::None).unwrap();
+        let conn = Connection::connect(format!("postgres://{}:{}@localhost", config!("postgres-login"), config!("postgres-password")), TlsMode::None).unwrap();
         conn.batch_execute("CREATE EXTENSION IF NOT EXISTS citext;
                             CREATE EXTENSION IF NOT EXISTS hstore;
                             CREATE TABLE IF NOT EXISTS images(

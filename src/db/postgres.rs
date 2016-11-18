@@ -233,6 +233,21 @@ impl Db {
         Ok(newcount)
     }
 
+    pub fn similiar<T: Into<Option<i32>>>(&self, id:i32, take: T, skip: usize) -> SQLResult<Vec<Image>> {
+        let take = match take.into() {
+            Some(x) => x.to_string(),
+            None    => "ALL".to_string()
+        };
+
+        Ok(self.0.query(&format!("SELECT * FROM images
+                                 WHERE tags && (SELECT tags FROM images WHERE id = $1)
+                                 AND id != $1 LIMIT {} OFFSET {}", take, skip as i32),&[&id])?
+           .iter().fold(Vec::new(), |mut acc, row| {
+               acc.push(Db::extract_image(row));
+               acc
+           }))
+    }
+
     fn extract_image(row: Row) -> Image {
         Image{
             id: row.get("id"),

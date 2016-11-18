@@ -1,3 +1,5 @@
+const LOAD_AT_A_TIME = 25;
+
 function httpGetAsync(theUrl, callback) {
     var xmlHttp = new XMLHttpRequest();
     xmlHttp.onreadystatechange = function() {
@@ -66,6 +68,35 @@ function load(){
     });
 }
 
+function loadSimiliar() {
+    var reg = /show\/(\d+)/;
+    var id = reg.exec(window.location.pathname)[1];
+    
+    var similiar_block = document.getElementById("similiar");;
+    var query = "/similiar?id=" + id + "&offset="+similiar_block.children.length;
+
+    httpGetAsync(query, function(text){
+        var body = JSON.parse(text);
+        if (body.length < LOAD_AT_A_TIME) {
+            document.getElementById("more-button").parentNode.removeChild(document.getElementById("more-button"));
+        }
+
+        body.forEach(function(image) {
+            var link = document.createElement("a");
+            link.href = "/show/"+image.id;
+            link.target = "_blank";
+            var im = document.createElement("div");
+            im.title = image.tags.join(" ");
+            im.className = "thumbnail";
+            im.style.backgroundImage = "url(\"/images/preview/"+image.name+"\")";
+
+            link.appendChild(im);
+            similiar_block.appendChild(link);
+        });
+    });
+}
+
 window.onload = function() {
     load();
+    loadSimiliar();
 }

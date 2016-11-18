@@ -191,6 +191,9 @@ fn show(req: &mut Request) -> IronResult<Response> {
             a href={ "/images/" (image.name) } {
                 img#image-block style="display: block; margin: 0 auto;" src={ "/images/" (image.name) } /
             }
+            h4 style="margin-left: 15%; margin-top: 2%;" { "Similiar images" } br /
+            div#similiar / // Похожие через JS
+            button#more-button onclick="loadSimiliar()" "More"
         }
     };
 
@@ -370,6 +373,26 @@ fn vote_image(req: &mut Request) -> IronResult<Response> {
     })
 }
 
+fn similiar(req: &mut Request) -> IronResult<Response> {
+    let mut response = Response::new();
+
+    let q = match req.get_ref::<UrlEncodedQuery>() {
+        Ok(hashmap) => hashmap,
+        Err(_) => return Ok(Response::with((status::BadRequest, "No parameters")))
+    };
+
+    let offset = query!(q,"offset").unwrap_or(&"0".to_string()).parse::<usize>().unwrap();
+    let id = query!(q,"id").unwrap().parse::<i32>().unwrap();
+    let images = DB.lock().unwrap().similiar(id, 25, offset).unwrap();
+
+    response
+        .set_mut(Mime(TopLevel::Application, SubLevel::Json,
+                      vec![(Attr::Charset, Value::Utf8)]))
+        .set_mut(json::encode(&images).unwrap())
+        .set_mut(status::Ok);
+    Ok(response)
+}
+
 fn main() {
     let router = router!(index:     get "/" => index_n_search,
                          more:      get "/more" => more,
@@ -379,6 +402,7 @@ fn main() {
 
                          show:      get "/show/:id" => show,
                          delete:    get "/delete/:id" => delete,
+                         similiar:  get "/similiar" => similiar,
 
                          login:     post "/login" => login,
                          upload_im: post "/upload_image" => upload_image,

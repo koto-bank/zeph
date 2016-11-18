@@ -9,14 +9,13 @@ extern crate rustc_serialize;
 extern crate hyper;
 extern crate time;
 extern crate multipart;
+extern crate toml;
 
 extern crate iron;
 extern crate staticfile;
 extern crate mount;
 extern crate urlencoded;
 extern crate iron_sessionstorage as session;
-
-use rustc_serialize::json;
 
 use iron::prelude::*;
 use iron::status;
@@ -36,6 +35,29 @@ use std::path::Path;
 use std::fs::{File,OpenOptions,remove_file};
 use std::io::Read;
 use std::thread;
+use std::sync::Mutex;
+use std::cell::RefCell;
+
+use rustc_serialize::json;
+
+pub use toml::{Table,Parser};
+
+// Макро
+
+#[macro_export]
+macro_rules! config{
+    {$name:expr} => {
+        CONFIG[$name].as_str().unwrap()
+    };
+}
+
+macro_rules! query{
+    ($q:ident, $name:expr) => {
+        $q.get($name).unwrap_or(&Vec::new()).get(0)
+    }
+}
+
+// Модули
 
 mod db;
 mod sync;
@@ -43,22 +65,13 @@ mod commands;
 mod utils;
 
 use db::{Db,VoteImageError};
-use utils::save_image;
-
-use std::sync::Mutex;
-use std::cell::RefCell;
+use utils::{save_image,open_config};
 
 lazy_static! {
     pub static ref DB : Mutex<Db> = Mutex::new(Db::new());
-
     /// Использование лежит в utils
     pub static ref OUTF : Mutex<RefCell<File>> = Mutex::new(RefCell::new(OpenOptions::new().append(true).create(true).open("OUTPUT").unwrap()));
-}
-
-macro_rules! query{
-    {$q:ident, $name:expr} => {
-        $q.get($name).unwrap_or(&Vec::new()).get(0)
-    }
+    pub static ref CONFIG : Table = open_config();
 }
 
 struct Login(String);
@@ -197,8 +210,8 @@ fn delete(req: &mut Request) -> IronResult<Response> {
     Ok(match req.session().get::<Login>()? {
         Some(username) => if Some(username.0) == image.uploader {
             let name = DB.lock().unwrap().delete_image(id).unwrap();
-            remove_file(format!("assets/images/{}", name)).unwrap();
-            remove_file(format!("assets/images/preview/{}", name)).unwrap();
+            remove_file(format!("{}/{}", config!("images-directory"), name)).unwrap();
+            remove_file(format!("{}/preview/{}", config!("images-directory"), name)).unwrap();
             response
                 .set_mut(Redirect("/".to_string()))
                 .set_mut(status::Found);
@@ -272,7 +285,7 @@ fn upload_image(req: &mut Request) -> IronResult<Response> {
                                 let _ = File::open(&savedfile.path).unwrap().read_to_end(&mut body);
                                 let name = DB.lock().unwrap().add_with_tags_name(&tags, filename.split('.').collect::<Vec<_>>()[1], &username).unwrap();
 
-                                save_image(Path::new("assets/images"), &name, &body);
+                                save_image(Path::new(config!("images-directory")), &name, &body);
 
                                 let mut response = Response::new();
                                 response
@@ -374,7 +387,7 @@ fn main() {
     let mut mount = Mount::new();
     mount.mount("/", router)
         .mount("/assets", Static::new(Path::new("assets")))
-        .mount("/images", Static::new(Path::new("assets/images")));
+        .mount("/images", Static::new(Path::new(config!("images-directory"))));
 
     let mut chain = Chain::new(mount);
     chain.around(SessionStorage::new(SignedCookieBackend::new(time::now().to_timespec().sec.to_string().bytes().collect::<Vec<_>>())));

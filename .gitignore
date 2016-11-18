@@ -1,6 +1,6 @@
 target
 Cargo.lock
-assets/images
+images*
 database
 db.db
 *.swp

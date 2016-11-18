@@ -8,7 +8,7 @@ use ::utils::*;
 use std::io::Read;
 use std::path::Path;
 
-pub use super::DB;
+pub use super::{DB,CONFIG};
 use super::db::ImageBuilder;
 
 use rustc_serialize::json::Json;
@@ -98,7 +98,7 @@ fn download(client: &Client, im: &Image) -> Result<(), hyper::Error> {
         .finalize();
     DB.lock().unwrap().add_image(&imb).unwrap();
 
-    save_image(Path::new("assets/images"), &im.name, &body);
+    save_image(Path::new(config!("images-directory")), &im.name, &body);
 
     Ok(())
 }

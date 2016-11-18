@@ -16,14 +16,13 @@ iron-sessionstorage = "*"
 maud = {version = "*", features = [ "iron" ] }
 maud_macros = "*"
 
-# Сессия
-
 rustc-serialize = "*"
 hyper = "*"
 image = "*"
 lazy_static = "*"
 rust-crypto = "*"
 time = "*"
+toml = "*"
 
 rusqlite = { version = "*", optional = true }
 postgres = { version = "*", optional = true, git = "https://github.com/sfackler/rust-postgres"}

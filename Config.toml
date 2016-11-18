@@ -1,0 +1,4 @@
+images-directory = "images"
+
+postgres-login = "easy"
+postgres-password = ""

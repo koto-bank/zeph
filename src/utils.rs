@@ -3,11 +3,13 @@ extern crate image;
 use self::image::FilterType;
 
 use std::fmt::Display;
-use std::io::Write;
+use std::io::{Write,Read};
 use std::fs::{File,create_dir,read_dir};
 use std::path::Path;
 
-use ::OUTF;
+use super::{Table,Parser};
+
+use ::{OUTF,CONFIG};
 
 /// Написать в `OUTPUT`
 pub fn log<T: Display>(s: T) {
@@ -18,8 +20,8 @@ pub fn log<T: Display>(s: T) {
 
 /// Сохраняет картинку & создаёт к ней превью
 pub fn save_image(dir: &Path, name: &str, file: &[u8]) {
-    if read_dir("assets/images").is_err() { create_dir("assets/images").unwrap(); }
-    if read_dir("assets/images/preview").is_err() { create_dir("assets/images/preview").unwrap(); }
+    if read_dir(config!("images-directory")).is_err() { create_dir(config!("images-directory")).unwrap(); }
+    if read_dir(format!("{}/preview", config!("images-directory"))).is_err() { create_dir(format!("{}/preview", config!("images-directory"))).unwrap(); }
 
     let prev = match image::load_from_memory(file) {
         Ok(x) => x.resize(500, 500, FilterType::Nearest),
@@ -55,6 +57,16 @@ pub fn includes<T: PartialEq>(first: &[T], second: &[T]) -> bool {
     }
 
     r == c
+}
+
+pub fn open_config() -> Table {
+    let mut file = match File::open("Config.toml") {
+        Ok(x)   => x,
+        Err(_)  => panic!("No config file")
+    };
+    let mut s = String::new();
+    file.read_to_string(&mut s).unwrap();
+    Parser::new(&s).parse().unwrap()
 }
 
 #[cfg(test)]

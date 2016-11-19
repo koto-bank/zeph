@@ -36,6 +36,10 @@ function loadMore() {
     var image_block = document.getElementById("images");;
     var query = "/more?offset="+image_block.children.length;
 
+    var spinner = document.createElement("div");
+    spinner.className = "spinner";
+    image_block.appendChild(spinner);
+
     if (window.location.pathname.startsWith("/search")) {
         query = query + "&q=" + getUrlParameter("q");
     }
@@ -46,6 +50,7 @@ function loadMore() {
             DONE_LOADING = true;
         }
 
+        image_block.removeChild(spinner);
         body.forEach(function(image) {
             var link = document.createElement("a");
             link.href = "/show/"+image.id;

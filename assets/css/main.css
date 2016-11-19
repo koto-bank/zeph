@@ -51,6 +51,7 @@ body {
 #images {
     margin-left: 15%;
     overflow-x: auto;
+    overflow-y: hidden;
 }
 
 #nano-logo {

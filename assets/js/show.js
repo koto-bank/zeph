@@ -75,8 +75,12 @@ function loadSimiliar() {
     var reg = /show\/(\d+)/;
     var id = reg.exec(window.location.pathname)[1];
     
-    var similiar_block = document.getElementById("similiar");;
+    var similiar_block = document.getElementById("similiar");
     var query = "/similiar?id=" + id + "&offset="+similiar_block.children.length;
+
+    var spinner = document.createElement("div");
+    spinner.className = "spinner";
+    similiar_block.appendChild(spinner);
 
     httpGetAsync(query, function(text){
         var body = JSON.parse(text);
@@ -84,6 +88,7 @@ function loadSimiliar() {
             DONE_LOADING = true;
         }
 
+        similiar_block.removeChild(spinner);
         body.forEach(function(image) {
             var link = document.createElement("a");
             link.href = "/show/"+image.id;

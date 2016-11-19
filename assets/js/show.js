@@ -102,6 +102,9 @@ function loadSimiliar() {
 
 window.onload = function() {
     load();
+}
+
+window.DOMContentLoaded = function() {
     loadSimiliar();
 }
 

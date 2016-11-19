@@ -1,5 +1,8 @@
 #![cfg(feature = "postgresql")]
 
+//! PostgreSQL бэкэнд,
+//! для работы нужны расширения citext, hstore и smlar.
+
 extern crate postgres;
 extern crate crypto;
 

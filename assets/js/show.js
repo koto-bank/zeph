@@ -104,9 +104,9 @@ window.onload = function() {
     load();
 }
 
-window.DOMContentLoaded = function() {
+document.addEventListener("DOMContentLoaded", function(event) {
     loadSimiliar();
-}
+});
 
 window.onscroll = function(ev) {
     if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight) {

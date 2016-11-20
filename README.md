@@ -19,6 +19,8 @@ Also, some Postgres modules are required: `citext`, `smlar` and `hstore`.
 
 # Running
 
+Currently in works only on nightly rust.
+
 Just run it with `cargo run --release` or build it and place the compiled binary into the crate root.
 
 # Screenshots

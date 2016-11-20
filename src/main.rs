@@ -42,7 +42,7 @@ use rustc_serialize::json;
 
 pub use toml::{Table,Parser};
 
-// Макро
+// Macros
 
 #[macro_export]
 macro_rules! config{
@@ -57,7 +57,7 @@ macro_rules! query{
     }
 }
 
-// Модули
+// Modules
 
 mod db;
 mod sync;
@@ -69,7 +69,7 @@ use utils::{save_image,open_config};
 
 lazy_static! {
     pub static ref DB : Mutex<Db> = Mutex::new(Db::new());
-    /// Использование лежит в utils
+    /// Used in utils
     pub static ref OUTF : Mutex<RefCell<File>> = Mutex::new(RefCell::new(OpenOptions::new().append(true).create(true).open("OUTPUT").unwrap()));
     pub static ref CONFIG : Table = open_config();
 }
@@ -105,11 +105,11 @@ fn index_n_search(_req: &mut Request) -> IronResult<Response> {
                 form#tag-search-form action="/search" {
                     input#tag-search-field placeholder="Search" name="q" type="text" /
                 }
-                div#tags {} // Тэги через JS
+                div#tags {} // Tags w/ JS
             }
-            div#images {} // Картинки через JS
+            div#images {} // Pics w/ JS
             button#upload-button onclick="showUploadOrLogin()" "Login"
-            div#login-or-upload-form / // Форма через JS
+            div#login-or-upload-form / // Form w/ JS
         }
     };
     Ok(Response::with((status::Ok, page)))
@@ -192,7 +192,7 @@ fn show(req: &mut Request) -> IronResult<Response> {
                     img#image-block style="display: block; margin: 0 auto;" src={ "/images/" (image.name) } /
                 }
                 h4 style="margin-top: 2%;" { "Similiar images" } br /
-                div#similiar {} // Похожие через JS
+                div#similiar {} // Similiar w/ JS
             }
         }
     };

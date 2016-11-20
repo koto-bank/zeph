@@ -11,7 +11,7 @@ use std::sync::mpsc::Receiver;
 
 pub fn main(rc: &Receiver<()>) {
     let client = Client::new();
-    let mut url_string = "https://e621.net/post/index.json?limit=300".to_string(); // У e621 лимит 320 за раз
+    let mut url_string = "https://e621.net/post/index.json?limit=300".to_string(); // limit is actually 320
 
     loop {
         let res = match req_and_parse(&client, &url_string) {

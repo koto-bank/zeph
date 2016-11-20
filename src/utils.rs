@@ -11,14 +11,14 @@ use super::{Table,Parser};
 
 use ::{OUTF,CONFIG};
 
-/// Написать в `OUTPUT`
+/// Write to `OUTPUT`
 pub fn log<T: Display>(s: T) {
     let outf = OUTF.lock().unwrap();
     let mut outf = outf.borrow_mut();
     writeln!(outf, "{}", s).unwrap();
 }
 
-/// Сохраняет картинку & создаёт к ней превью
+/// Save image & generate preview
 pub fn save_image(dir: &Path, name: &str, file: &[u8]) {
     if read_dir(config!("images-directory")).is_err() { create_dir(config!("images-directory")).unwrap(); }
     if read_dir(format!("{}/preview", config!("images-directory"))).is_err() { create_dir(format!("{}/preview", config!("images-directory"))).unwrap(); }
@@ -38,7 +38,7 @@ pub fn save_image(dir: &Path, name: &str, file: &[u8]) {
     prev.save(&mut prevf, image::JPEG).unwrap();
 }
 
-/// Равны ли массивы
+/// Are arrays equeal?
 pub fn arr_eq<T: Ord + PartialEq>(first: &mut Vec<T>, second: &mut Vec<T>) -> bool {
     first.sort();
     second.sort();
@@ -46,7 +46,7 @@ pub fn arr_eq<T: Ord + PartialEq>(first: &mut Vec<T>, second: &mut Vec<T>) -> bo
 }
 
 
-/// Включает ли второй массив первый
+/// Second includes first?
 pub fn includes<T: PartialEq>(first: &[T], second: &[T]) -> bool {
     let r = first.len();
     let mut c = 0;

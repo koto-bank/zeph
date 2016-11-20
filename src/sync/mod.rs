@@ -81,7 +81,7 @@ fn process_downloads(client: &Client, images: &[Image], recv: &Receiver<()>) -> 
     Ok(())
 }
 
-/// Качает картинку, прерываясь, если из консоли поступил kill
+/// Download image and stop if console sends `kill` signal
 fn download(client: &Client, im: &Image) -> Result<(), hyper::Error> {
     let mut res = client.get(&im.url)
         .header(UserAgent("Zeph/1.0".to_owned()))
@@ -103,7 +103,7 @@ fn download(client: &Client, im: &Image) -> Result<(), hyper::Error> {
     Ok(())
 }
 
-/// Запросить и распарсить JSON
+/// Get and parse JSON
 fn req_and_parse(client: &Client, url: &str) -> Result<Json, hyper::Error> {
     let mut res = match client.get(url)
         .header(UserAgent("Zeph/1.0".to_owned()))

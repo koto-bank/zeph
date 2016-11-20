@@ -1,7 +1,7 @@
-var LOAD_AT_A_TIME = 25; // Сколько картинок за раз грузить
-var TAGS_SET = false; // Выставлены ли тэги сбоку
-var DONE_LOADING = false; // Все ли картинки загружены
-var LOADING_IN_PROGRESS = false; // Грузится ли сейчас картинки
+var LOAD_AT_A_TIME = 25;
+var TAGS_SET = false;
+var DONE_LOADING = false;
+var LOADING_IN_PROGRESS = false;
 
 function httpGetAsync(theUrl, callback) {
     var xmlHttp = new XMLHttpRequest();

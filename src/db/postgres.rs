@@ -1,7 +1,7 @@
 #![cfg(feature = "postgresql")]
 
-//! PostgreSQL бэкэнд,
-//! для работы нужны расширения citext, hstore и smlar.
+//! PostgreSQL backend,
+//! needs citext, hstore and smlar.
 
 extern crate postgres;
 extern crate crypto;
@@ -16,14 +16,14 @@ pub struct Db(Connection);
 use super::{Image,Tag,AnyWith,ImageBuilder,VoteImageError,parse_tag};
 use super::super::CONFIG;
 
-impl Default for Db { // Чтобы Clippy не жаловался
+impl Default for Db { // Damn clippy
     fn default() -> Self {
         Self::new()
     }
 }
 
 lazy_static! {
-    static ref SCRYPT_PARAMS: ScryptParams = ScryptParams::new(10, 8, 1); // 10 сильно быстрее чем 14
+    static ref SCRYPT_PARAMS: ScryptParams = ScryptParams::new(10, 8, 1); // 10 is really faster than 14
 }
 
 impl Db {
@@ -54,7 +54,7 @@ impl Db {
         Db(conn)
     }
 
-    /// Сохранить картинку, сгенерировава имя из тэгов
+    /// Add image, generate name from tags & id
     pub fn add_with_tags_name(&self, tags: &[String], ext: &str, uploader: &str) -> SQLResult<String> {
         let lastnum = self.0.query("SELECT id FROM images ORDER BY id DESC LIMIT 1", &[])?.get(0).get::<_, i32>("id");
 
@@ -63,6 +63,7 @@ impl Db {
         Ok(name)
     }
 
+    /// Add image
     pub fn add_image(&self, image: &ImageBuilder) -> SQLResult<()> {
         self.0.execute("INSERT into images (name,
                                             tags,
@@ -104,6 +105,7 @@ impl Db {
            }))
     }
 
+    /// Search images by tags
     pub fn by_tags<T: Into<Option<i32>>>(&self, take: T, skip: usize, tags: &[String]) -> SQLResult<Vec<Image>> {
         let tags = tags.iter().map(|x| parse_tag(x)).collect::<Vec<_>>();
         let order = tags.iter().filter_map(|x| {
@@ -119,7 +121,7 @@ impl Db {
             None    => "id DESC"
         };
 
-        let q = tags.clone().iter().map(|t| {
+        let q = tags.clone().iter().map(|t| { // TODO: make it better?
             match *t {
                 Tag::Include(ref incl) => format!(r"tags @> ARRAY['{}']", incl),
                 Tag::Exclude(ref excl) => format!(r"NOT tags @> ARRAY['{}']", excl),
@@ -186,7 +188,7 @@ impl Db {
         Ok(name)
     }
 
-    // true - всё хорошо, false - пользователь уже существует
+    // true - all's OK, false - user already exists
     pub fn add_user(&self, login: &str, pass: &str) -> SQLResult<bool> {
         if self.0.query("SELECT * FROM users WHERE name = $1", &[&login])?.is_empty() && login.to_lowercase() != "sync" {
             let pass = scrypt_simple(pass, &SCRYPT_PARAMS).unwrap();
@@ -198,7 +200,8 @@ impl Db {
         }
     }
 
-    ///Result показывает ошибки в базе, Option - существует пользователь или нет
+    /// Checks if pass & login match.
+    /// Option is used to indicate that user does (not) exist
     pub fn check_user(&self, login: &str, pass: &str) -> SQLResult<Option<bool>> {
         let pass_hash = self.0.query("SELECT * FROM USERS WHERE name = $1", &[&login])?;
         if pass_hash.is_empty() {
@@ -209,7 +212,7 @@ impl Db {
         }
     }
 
-    // true - плюсик, false - минус, возвращает новое число голосов
+    // true - `+`, false - `-`, returns count of votes
     pub fn vote_image(&self, login: &str, image_id: i32 ,vote: bool) -> SQLResult<Result<i32, VoteImageError>> {
         let tr = self.0.transaction()?;
         let votechar =  if vote { "+" } else { "-" }.to_string();
@@ -238,6 +241,7 @@ impl Db {
         Ok(newcount)
     }
 
+    /// Find similiar images
     pub fn similiar<T: Into<Option<i32>>>(&self, id:i32, take: T, skip: usize) -> SQLResult<Vec<Image>> {
         let take = match take.into() {
             Some(x) => x.to_string(),

@@ -10,29 +10,29 @@ pub struct Image {
     pub score: i32
 }
 
-/// Ошибка при голосовании за картинку
+/// Image voting error
 pub enum VoteImageError {
-    /// Уже голосовали за этот вариант
+    /// Voting up/down twice
     Already,
-    ///Нет такой картинки
+    /// No such image
     NoImage
 }
 
-/// Запрос вида `*что-то` и `что-то*`
+/// Partial tags, e.g. `Some*`
 #[derive(Debug,Clone)]
 enum AnyWith {
     After(String),
     Before(String)
 }
 
-/// Сортировка по ворастанию/убыванию
+/// Ascending/descending sort
 #[derive(Debug,Clone)]
 enum AscDesc {
     Asc,
     Desc
 }
 
-/// Сортировка по запросу вида `sort:asc/desc:вид`
+/// Sorting, e.g. `sort:asc/desc:id/score`
 #[derive(Debug,Clone)]
 enum OrderBy {
     Id,
@@ -41,22 +41,23 @@ enum OrderBy {
 
 #[derive(Debug,Clone)]
 enum Tag {
-    /// Обычный точный поиск
+    /// Just a tag
     Include(String),
-    /// -тэг
+    /// Exlude tag
     Exclude(String),
-    /// rating:s,q,e
+    /// Rating, e.g. rating:s for safe
     Rating(Vec<String>),
-    /// *x и x*
+    /// Partial tag
     AnyWith(AnyWith),
     /// from:derpibooru,konachan etc.
     From(Vec<String>),
-    /// uploader:имя1,имя2
+    /// Uploader search
     Uploader(Vec<String>),
-    /// sort:asc/desc:вид
+    /// Sorting
     OrderBy(OrderBy, AscDesc)
 }
 
+/// `pub` is used to switch DBs, though only postgres works TODO: fix sqlite sometime
 pub mod postgres;
 mod sqlite;
 
@@ -66,6 +67,7 @@ pub use self::sqlite::Db;
 #[cfg(feature = "postgresql")]
 pub use self::postgres::Db;
 
+/// Tag parsing, many copy-paste code and kinda ugly, probably could be better
 fn parse_tag(tag: &str) -> Tag {
     if tag.starts_with("rating") {
         let tag = tag.split("rating:").collect::<Vec<_>>()[1];
@@ -88,8 +90,8 @@ fn parse_tag(tag: &str) -> Tag {
         let t = tag.split(":").collect::<Vec<_>>();
         let s = t[1];
         let aod = match s {
-            "asc" => AscDesc::Asc, // От меньшего к большему
-            "desc" => AscDesc::Desc, // Наоборот
+            "asc" => AscDesc::Asc, // - -> +
+            "desc" => AscDesc::Desc, // + -> -
             _   => AscDesc::Desc
         };
         let by = match t[2] {
@@ -104,6 +106,7 @@ fn parse_tag(tag: &str) -> Tag {
     }
 }
 
+/// Strcture to ease image addition
 pub struct ImageBuilder {
     name: String,
     tags: Vec<String>,

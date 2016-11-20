@@ -9,7 +9,7 @@ use std::path::Path;
 
 pub struct Db(Connection);
 
-impl Default for Db { // Чтобы Clippy не жаловался
+impl Default for Db {
     fn default() -> Self {
         Self::new()
     }
@@ -29,7 +29,6 @@ impl Db {
         Db(conn)
     }
 
-    /// Сохранить картинку, сгенерировава имя из тэгов
     pub fn add_with_tags_name(&self, tags: &[String], ext: &str) -> SQLResult<String> {
         let lastnum = self.0.query_row("SELECT id FROM images ORDER BY id DESC LIMIT 1", &[], |row| {
             row.get::<i32,i32>(0)

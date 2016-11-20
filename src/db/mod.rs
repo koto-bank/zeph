@@ -67,42 +67,55 @@ pub use self::sqlite::Db;
 #[cfg(feature = "postgresql")]
 pub use self::postgres::Db;
 
-/// Tag parsing, many copy-paste code and kinda ugly, probably could be better
+/// Tag parsing
 fn parse_tag(tag: &str) -> Tag {
-    if tag.starts_with("rating") {
-        let tag = tag.split("rating:").collect::<Vec<_>>()[1];
-        Tag::Rating(tag.split(',').map(String::from).collect::<Vec<_>>())
-    } else if tag.starts_with("from") {
-        let tag = tag.split("from:").collect::<Vec<_>>()[1];
-        Tag::From(tag.split(',').map(String::from).collect::<Vec<_>>())
-    } else if tag.starts_with("uploader") {
-        let tag = tag.split("uploader:").collect::<Vec<_>>()[1];
-        Tag::Uploader(tag.split(',').map(String::from).collect::<Vec<_>>())
-    } else if tag.starts_with('-') {
-        Tag::Exclude(tag[1..].to_string())
-    } else if tag.starts_with('*') {
-        Tag::AnyWith(AnyWith::After(tag[1..].to_string()))
-    } else if tag.ends_with('*') {
-        let mut n = tag.to_string();
-        n.pop();
-        Tag::AnyWith(AnyWith::Before(n))
-    } else if tag.starts_with("sort:") {
-        let t = tag.split(":").collect::<Vec<_>>();
-        let s = t[1];
-        let aod = match s {
-            "asc" => AscDesc::Asc, // - -> +
-            "desc" => AscDesc::Desc, // + -> -
-            _   => AscDesc::Desc
-        };
-        let by = match t[2] {
-            "id" => OrderBy::Id,
-            "score" => OrderBy::Score,
-            _   => OrderBy::Id
-        };
+    let all = tag.split(":").collect::<Vec<_>>();
+    match all.len() {
+        1 => {
+            let tag = all[0];
+            if tag.starts_with("-") {
+                Tag::Exclude(tag[1..].to_string())
+            } else if tag.starts_with('*') {
+                Tag::AnyWith(AnyWith::After(tag[1..].to_string()))
+            } else if tag.ends_with('*') {
+                let mut n = tag.to_string();
+                n.pop();
+                Tag::AnyWith(AnyWith::Before(n))
+            } else {
+                Tag::Include(tag.to_string())
+            }
+        },
+        2 => {
+            let kind = all[0];
+            let values = all[1].split(',').map(String::from).collect::<Vec<_>>();
+            match kind {
+                "rating"    => Tag::Rating(values),
+                "from"      => Tag::From(values),
+                "uploader"  => Tag::Uploader(values),
+                _           => Tag::Include(tag.to_string()) // Probably shouldn't be anything there?
+            }
+        },
+        3 => { // Probably sort, but should check
+            if all[0] == "sort" {
+                let aod = match all[1] {
+                    "asc" => AscDesc::Asc, // - -> +
+                    "desc" => AscDesc::Desc, // + -> -
+                    _   => AscDesc::Desc
+                };
+                let by = match all[2] {
+                    "id" => OrderBy::Id,
+                    "score" => OrderBy::Score,
+                    _   => OrderBy::Id
+                };
 
-        Tag::OrderBy(by, aod)
-    } else {
-        Tag::Include(tag.to_string())
+                Tag::OrderBy(by, aod)
+            } else {
+                Tag::Include(tag.to_string())
+            }
+        },
+        _   => { // Shouldn't happen
+            Tag::Include(tag.to_string())
+        }
     }
 }
 

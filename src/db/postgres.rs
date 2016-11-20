@@ -121,54 +121,26 @@ impl Db {
             None    => "id DESC"
         };
 
-        let q = tags.clone().iter().map(|t| { // TODO: make it better?
+        /// Join tags for tags that can be separated with comma, e.g. rating or uploader
+        fn join_tags(kind: &str, values: &[String]) -> String {
+            values.iter().map(|s| format!("{} = '{}'", kind, s)).collect::<Vec<_>>().join(" OR ")
+        }
+
+        let q = tags.iter().map(|t| { // TODO: do something with OrderBy
             match *t {
-                Tag::Include(ref incl) => format!(r"tags @> ARRAY['{}']", incl),
-                Tag::Exclude(ref excl) => format!(r"NOT tags @> ARRAY['{}']", excl),
-                Tag::AnyWith(ref x) => match *x {
+                Tag::Include(ref incl)  => format!(r"tags @> ARRAY['{}']", incl),
+                Tag::Exclude(ref excl)  => format!(r"NOT tags @> ARRAY['{}']", excl),
+                Tag::AnyWith(ref x)     => match *x {
                     AnyWith::Before(ref bef) => format!(r"(SELECT bool_or(tag ~ '^{}') FROM unnest(tags) t (tag))", bef),
                     AnyWith::After(ref aft) => format!(r"(SELECT bool_or(tag ~ '{}$') FROM unnest(tags) t (tag))", aft),
                 },
-                Tag::Rating(ref r) => {
-                    let mut s = "(".to_string();
-                    for tg in r {
-                        s.push_str(&format!("rating = '{}' OR ", tg))
-                    }
-                    let _ = (0..4).inspect(|_| {s.pop(); }).collect::<Vec<_>>();
-                    s.push_str(")");
-
-                    s
-                },
-
-                Tag::From(ref f) => {
-                    let mut s = "(".to_string();
-                    for tg in f {
-                        s.push_str(&format!("got_from = '{}' OR ", tg))
-                    }
-                    let _ = (0..4).inspect(|_| {s.pop(); }).collect::<Vec<_>>();
-                    s.push_str(")");
-
-                    s
-                },
-
-                Tag::Uploader(ref u) => {
-                    let mut s = "(".to_string();
-                    for tg in u {
-                        s.push_str(&format!("uploader = '{}' OR ", tg))
-                    }
-                    let _ = (0..4).inspect(|_| {s.pop(); }).collect::<Vec<_>>();
-                    s.push_str(")");
-
-                    s
-                },
-                Tag::OrderBy(_,_) => {String::new()}
+                Tag::Rating(ref r)      => join_tags("rating", r),
+                Tag::From(ref f)        => join_tags("got_from", f),
+                Tag::Uploader(ref u)    => join_tags("uploader", u),
+                Tag::OrderBy(_,_)       => String::new() // <- This one
             }
         }).filter(|x| !x.is_empty()).collect::<Vec<_>>().join(" AND ");
-        let q = if !q.is_empty() {
-            format!("WHERE {}", q)
-        } else {
-            String::new()
-        };
+        let q = if !q.is_empty() { format!("WHERE {}", q) } else { String::new() };
 
         let take = match take.into() {
             Some(x) => x.to_string(),

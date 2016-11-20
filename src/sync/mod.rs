@@ -59,7 +59,7 @@ fn process_downloads(client: &Client, images: &[Image], recv: &Receiver<()>) -> 
                 log(format!("ERROR: {}; SKIP", er));
                 continue
             } else {
-                log(format!( "DONE {}", im.name));
+                log(format!("DONE {}", im.name));
             }
         } else {
             let m_image = images_c.iter().find(|x| x.name == im.name ).unwrap();

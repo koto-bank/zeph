@@ -28,7 +28,9 @@ lazy_static! {
 
 impl Db {
     pub fn new() -> Self {
-        let conn = Connection::connect(format!("postgres://{}:{}@localhost", config!("postgres-login"), config!("postgres-password")), TlsMode::None).unwrap();
+        let conn = Connection::connect(format!("postgres://{name}:{pass}@localhost",
+                                               name = config!("postgres-login"),
+                                               pass = config!("postgres-password")), TlsMode::None).unwrap();
         conn.batch_execute("CREATE EXTENSION IF NOT EXISTS citext;
                             CREATE EXTENSION IF NOT EXISTS hstore;
                             CREATE EXTENSION IF NOT EXISTS smlar;
@@ -58,7 +60,10 @@ impl Db {
     pub fn add_with_tags_name(&self, tags: &[String], ext: &str, uploader: &str) -> SQLResult<String> {
         let lastnum = self.0.query("SELECT id FROM images ORDER BY id DESC LIMIT 1", &[])?.get(0).get::<_, i32>("id");
 
-        let name = format!("{}_{}.{}", lastnum + 1  , tags.join("_").replace("'","''"),ext);
+        let name = format!("{id}_{tags}.{ext}",
+                           id = lastnum + 1,
+                           tags = tags.join("_").replace("'","''"),
+                           ext = ext);
         self.add_image(&ImageBuilder::new(&name, tags).uploader(uploader).finalize())?;
         Ok(name)
     }
@@ -98,7 +103,9 @@ impl Db {
             None    => "ALL".to_string()
         };
 
-        Ok(self.0.query(&format!("SELECT * FROM images ORDER BY id DESC LIMIT {} OFFSET {}", take, skip as i32),&[])?
+        Ok(self.0.query(&format!("SELECT * FROM images ORDER BY id DESC LIMIT {limit} OFFSET {offset}",
+                                 limit = take,
+                                 offset = skip as i32),&[])?
            .iter().fold(Vec::new(), |mut acc, row| {
                acc.push(Db::extract_image(row));
                acc
@@ -147,7 +154,11 @@ impl Db {
             None    => "ALL".to_string()
         };
 
-        Ok(self.0.query(&format!("SELECT * FROM images {} ORDER BY {} LIMIT {} OFFSET {}", q, order, take, skip),&[])?
+        Ok(self.0.query(&format!("SELECT * FROM images {query} ORDER BY {order} LIMIT {limit} OFFSET {offset}",
+                                 query  = q,
+                                 order  = order,
+                                 limit  = take,
+                                 offset = skip),&[])?
            .iter().fold(Vec::new(), |mut acc, row| {
                acc.push(Db::extract_image(row));
                acc
@@ -223,7 +234,7 @@ impl Db {
         Ok(self.0.query(&format!("SELECT * FROM images
                                     WHERE id != $1
                                     ORDER BY smlar(tags, (SELECT tags FROM images WHERE id = $1)) DESC
-                                    LIMIT {} OFFSET {}", take, skip as i32),&[&id])?
+                                    LIMIT {limit} OFFSET {offset}", limit = take, offset = skip as i32),&[&id])?
            .iter().fold(Vec::new(), |mut acc, row| {
                acc.push(Db::extract_image(row));
                acc

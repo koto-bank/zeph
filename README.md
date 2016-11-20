@@ -1,3 +1,4 @@
+[![Build Status](https://travis-ci.org/koto-bank/zeph.svg?branch=master)](https://travis-ci.org/koto-bank/zeph)
 # Zeph
 
 A \*booru written in Rust with Iron and PostgreSQL (though there is also an abandoned SQLite module..)

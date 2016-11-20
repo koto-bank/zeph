@@ -32,6 +32,8 @@ pub mod danbooru;
 pub mod konachan;
 pub mod gelbooru;
 
+/// Do the prepare/download/add-to-db chores on an image list
+/// and stop if console sends `kill` signal
 fn process_downloads(client: &Client, images: &[Image], recv: &Receiver<()>) -> Result<(),()> {
     let images_c = DB.lock().unwrap().get_images(None,0).unwrap();
 
@@ -81,7 +83,7 @@ fn process_downloads(client: &Client, images: &[Image], recv: &Receiver<()>) -> 
     Ok(())
 }
 
-/// Download image and stop if console sends `kill` signal
+/// Download image and add it to DB
 fn download(client: &Client, im: &Image) -> Result<(), hyper::Error> {
     let mut res = client.get(&im.url)
         .header(UserAgent("Zeph/1.0".to_owned()))

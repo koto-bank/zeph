@@ -128,11 +128,6 @@ impl Db {
             None    => "id DESC"
         };
 
-        /// Join tags for tags that can be separated with comma, e.g. rating or uploader
-        fn join_tags(kind: &str, values: &[String]) -> String {
-            values.iter().map(|s| format!("{} = '{}'", kind, s)).collect::<Vec<_>>().join(" OR ")
-        }
-
         let q = tags.iter().map(|t| { // TODO: do something with OrderBy
             match *t {
                 Tag::Include(ref incl)  => format!(r"tags @> ARRAY['{}']", incl),
@@ -141,9 +136,9 @@ impl Db {
                     AnyWith::Before(ref bef) => format!(r"(SELECT bool_or(tag ~ '^{}') FROM unnest(tags) t (tag))", bef),
                     AnyWith::After(ref aft) => format!(r"(SELECT bool_or(tag ~ '{}$') FROM unnest(tags) t (tag))", aft),
                 },
-                Tag::Rating(ref r)      => join_tags("rating", r),
-                Tag::From(ref f)        => join_tags("got_from", f),
-                Tag::Uploader(ref u)    => join_tags("uploader", u),
+                Tag::Rating(ref r)      => Db::join_tags("rating", r),
+                Tag::From(ref f)        => Db::join_tags("got_from", f),
+                Tag::Uploader(ref u)    => Db::join_tags("uploader", u),
                 Tag::OrderBy(_,_)       => String::new() // <- This one
             }
         }).filter(|x| !x.is_empty()).collect::<Vec<_>>().join(" AND ");
@@ -239,6 +234,11 @@ impl Db {
                acc.push(Db::extract_image(row));
                acc
            }))
+    }
+
+    /// Join tags for tags that can be separated with comma, e.g. rating or uploader
+    fn join_tags(kind: &str, values: &[String]) -> String {
+        values.iter().map(|s| format!("{} = '{}'", kind, s)).collect::<Vec<_>>().join(" OR ")
     }
 
     fn extract_image(row: Row) -> Image {

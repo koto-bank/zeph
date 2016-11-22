@@ -69,11 +69,11 @@ pub use self::postgres::Db;
 
 /// Tag parsing
 fn parse_tag(tag: &str) -> Tag {
-    let all = tag.split(":").collect::<Vec<_>>();
+    let all = tag.split(':').collect::<Vec<_>>();
     match all.len() {
         1 => {
             let tag = all[0];
-            if tag.starts_with("-") {
+            if tag.starts_with('-') {
                 Tag::Exclude(tag[1..].to_string())
             } else if tag.starts_with('*') {
                 Tag::AnyWith(AnyWith::After(tag[1..].to_string()))
@@ -99,13 +99,11 @@ fn parse_tag(tag: &str) -> Tag {
             if all[0] == "sort" {
                 let aod = match all[1] {
                     "asc" => AscDesc::Asc, // - -> +
-                    "desc" => AscDesc::Desc, // + -> -
-                    _   => AscDesc::Desc
+                    "desc" | _ => AscDesc::Desc, // + -> -
                 };
                 let by = match all[2] {
-                    "id" => OrderBy::Id,
                     "score" => OrderBy::Score,
-                    _   => OrderBy::Id
+                    "id" | _ => OrderBy::Id,
                 };
 
                 Tag::OrderBy(by, aod)

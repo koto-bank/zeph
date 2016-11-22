@@ -1,6 +1,6 @@
 #![cfg(feature = "postgresql")]
 
-//! PostgreSQL backend,
+//! `PostgreSQL` backend,
 //! needs citext, hstore and smlar.
 
 extern crate postgres;

@@ -393,12 +393,46 @@ fn similiar(req: &mut Request) -> IronResult<Response> {
     Ok(response)
 }
 
+fn about(req: &mut Request) -> IronResult<Response> {
+    let page = html! {
+                meta charset="utf-8" /
+        link rel="stylesheet" href="/assets/css/milligram.min.css" /
+        link rel="stylesheet" href="/assets/css/main.css" /
+        link rel="icon" type="image/jpeg" href="/assets/favicon.jpg" /
+        title "Zeph - About"
+
+        div style="width:100%;" {
+            div.tags-search {
+                a href="/" title="Boop!" {
+                    img#nano-logo src="/assets/logo.jpg" /
+                    h3 style="display: inline; vertical-align: 50%" "Zeph"
+                }
+                form#tag-search-form action="/search" {
+                    input#tag-search-field placeholder="Search" name="q" type="text" /
+                }
+            }
+        }
+        div style="margin-left: 15%;" {
+            {"Zeph is an open-source booru/imageboard written in " a href="https://www.rust-lang.org/" "Rust" }
+            br /
+            { "You can get source code to build Zeph yourself from " a href="https://github.com/koto-bank/zeph" "Github" }
+            br /
+            @if let Some(addr) = CONFIG.get("contact-email") {
+                { "Contact e-mail adress: " a href={"mailto:" ( addr.as_str().unwrap()) } ( addr.as_str().unwrap() ) }
+            }
+        }
+    };
+
+    Ok(Response::with((status::Ok, page)))
+}
+
 fn main() {
     let router = router!(index:     get "/" => index_n_search,
                          more:      get "/more" => more,
                          search:    get "/search" => index_n_search,
                          user_stat: get "/user_status" => user_status,
                          vote:      get "/vote_image" => vote_image,
+                         about:     get "/about" => about,
 
                          show:      get "/show/:id" => show,
                          delete:    get "/delete/:id" => delete,

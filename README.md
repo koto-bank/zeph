@@ -15,6 +15,7 @@ Also, some Postgres modules are required: `citext`, `smlar` and `hstore`.
 * (Kind of) configurable
     * There is some basic configuration to do in `Config.toml`,
    `images-directory` is where the pictures are stored, `postgres-login` and `postgres-password` are used to connect to the database.
+   * `contact-email` is optional and, if set, will be shown on `/about` page
 * Users and registration, passwords are encrypted with scrypt. Users can vote for images (not for `sync`ed, though, because their score is based on the original score and updates when you `sync`)
 * Similiar images, based on tags.
 

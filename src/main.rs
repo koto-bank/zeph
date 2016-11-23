@@ -137,7 +137,7 @@ fn more(req: &mut Request) -> IronResult<Response> {
     Ok(response)
 }
 
-fn show(req: &mut Request) -> IronResult<Response> {
+fn show(_: &mut Request) -> IronResult<Response> {
     let id = req.extensions.get::<Router>().and_then(|x| x.find("id")).and_then(|x| x.parse::<i32>().ok()).unwrap();
     let image = match DB.lock().unwrap().get_image(id).unwrap() {
         Some(x) => x,

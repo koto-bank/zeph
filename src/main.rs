@@ -137,7 +137,7 @@ fn more(req: &mut Request) -> IronResult<Response> {
     Ok(response)
 }
 
-fn show(_: &mut Request) -> IronResult<Response> {
+fn show(req: &mut Request) -> IronResult<Response> {
     let id = req.extensions.get::<Router>().and_then(|x| x.find("id")).and_then(|x| x.parse::<i32>().ok()).unwrap();
     let image = match DB.lock().unwrap().get_image(id).unwrap() {
         Some(x) => x,
@@ -393,7 +393,7 @@ fn similiar(req: &mut Request) -> IronResult<Response> {
     Ok(response)
 }
 
-fn about(req: &mut Request) -> IronResult<Response> {
+fn about(_: &mut Request) -> IronResult<Response> {
     let page = html! {
                 meta charset="utf-8" /
         link rel="stylesheet" href="/assets/css/milligram.min.css" /

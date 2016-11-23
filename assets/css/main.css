@@ -39,7 +39,7 @@ body {
 }
 
 #tags {
-    height: 85%;
+    height: 80%;
     word-wrap: break-word;
     overflow-y: auto;
 }

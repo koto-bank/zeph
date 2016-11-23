@@ -106,6 +106,7 @@ fn index_n_search(_req: &mut Request) -> IronResult<Response> {
                     input#tag-search-field placeholder="Search" name="q" type="text" /
                 }
                 div#tags {} // Tags w/ JS
+                a href="/about" style="opacity: 0.5;" "About Zeph"
             }
             div#images {} // Pics w/ JS
             button#upload-button onclick="showUploadOrLogin()" "Login"
@@ -186,6 +187,7 @@ fn show(req: &mut Request) -> IronResult<Response> {
                         }
                     }
                 }
+                a href="/about" style="opacity: 0.5;" "About Zeph"
             }
             div style="margin-left: 15%;" {
                 a href={ "/images/" (image.name) } {

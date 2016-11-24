@@ -11,7 +11,7 @@ router = "*"
 staticfile = "*"
 mount = { version = "*", git = "https://github.com/iron/mount.git" }
 urlencoded = "*"
-iron-sessionstorage = "*"
+iron-sessionstorage = "0.3.0"
 
 maud = {version = "*", features = [ "iron" ] }
 maud_macros = "*"

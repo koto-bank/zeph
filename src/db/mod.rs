@@ -69,7 +69,7 @@ pub use self::postgres::Db;
 
 /// Tag parsing
 fn parse_tag(tag: &str) -> Tag {
-    let tag = tag.replace('\'', "''").replace(r'\\', r"\\");
+    let tag = tag.replace('\'', "''").replace('\\', r"\\");
     let all = tag.split(':').collect::<Vec<_>>();
     match all.len() {
         1 => {

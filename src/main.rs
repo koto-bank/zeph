@@ -32,9 +32,8 @@ use session::{SessionStorage,SessionRequestExt,Value as SessionValue};
 use session::backends::SignedCookieBackend;
 
 use std::path::Path;
-use std::fs::{File,OpenOptions,remove_file};
+use std::fs::{File,remove_file};
 use std::io::Read;
-use std::thread;
 use std::sync::Mutex;
 use std::cell::RefCell;
 
@@ -46,6 +45,10 @@ pub use toml::{Table,Parser};
 
 #[macro_export]
 macro_rules! config{
+    {? $name:expr} => {
+        CONFIG.get($name).and_then(|x| x.as_str())
+    };
+
     {$name:expr} => {
         CONFIG[$name].as_str().unwrap()
     };
@@ -61,17 +64,16 @@ macro_rules! query{
 
 mod db;
 mod sync;
-mod commands;
 mod utils;
 
 use db::{Db,VoteImageError};
-use utils::{save_image,open_config};
+use utils::{save_image,open_config,exec_command};
 
 lazy_static! {
     pub static ref DB : Mutex<Db> = Mutex::new(Db::new());
-    /// Used in utils
-    pub static ref OUTF : Mutex<RefCell<File>> = Mutex::new(RefCell::new(OpenOptions::new().append(true).create(true).open("OUTPUT").unwrap()));
     pub static ref CONFIG : Table = open_config();
+    /// Used in utils
+    pub static ref LOG : Mutex<RefCell<Vec<String>>> = Mutex::new(RefCell::new(Vec::new()));
 }
 
 struct Login(String);
@@ -428,6 +430,75 @@ fn about(_: &mut Request) -> IronResult<Response> {
     Ok(Response::with((status::Ok, page)))
 }
 
+fn admin_command(req: &mut Request) -> IronResult<Response> {
+    if let (Some(curr_username), Some(admin_username)) = (req.session().get::<Login>()?,config!(? "admin-username")) {
+        if curr_username.0.to_lowercase() == admin_username.to_lowercase() {
+            let body = match req.get::<UrlEncodedBody>() {
+                Ok(data) => data,
+                Err(_)  => return Ok(Response::with(status::BadRequest))
+            };
+
+            if let Some(comm) = body.get("command") {
+                exec_command(&comm[0]);
+            }
+
+            Ok(Response::with(status::Ok))
+        } else {
+            Ok(Response::with((status::Forbidden,"Not an admin")))
+        }
+    } else {
+        Ok(Response::with((status::Forbidden,"Not logged in"))) // .. or admin account is not set
+    }
+}
+
+fn admin(req: &mut Request) -> IronResult<Response> {
+    if let (Some(curr_username), Some(admin_username)) = (req.session().get::<Login>()?,config!(? "admin-username")) {
+        if curr_username.0.to_lowercase() == admin_username.to_lowercase() {
+            let log = LOG.lock().unwrap();
+            let page = html!{
+                script src="/assets/js/admin.js" {}
+
+                div#log-block style="width:40%; height:50%; overflow-y: auto; border: 1px solid black;" {
+                    @for l in log.borrow().iter() {
+                        (l)
+                    }
+                }
+                br /
+                form#command-form onsubmit="sendCommand(this); return false;" {
+                    input name="comm" nameplaceholder="Command" type="text" /
+                    input#send-button value="Send" type="submit" /
+                }
+            };
+            Ok(Response::with((status::Ok,page)))
+        } else {
+            Ok(Response::with((status::Forbidden,"Not an admin")))
+        }
+    } else {
+        Ok(Response::with((status::Forbidden,"Not logged in"))) // .. or admin account is not set
+    }
+}
+
+fn get_log(req: &mut Request) -> IronResult<Response> {
+    if let (Some(curr_username), Some(admin_username)) = (req.session().get::<Login>()?,config!(? "admin-username")) {
+        if curr_username.0.to_lowercase() == admin_username.to_lowercase() {
+            let log = LOG.lock().unwrap();
+            let log = log.borrow();
+            let mut response = Response::new();
+            response
+                .set_mut(Mime(TopLevel::Application, SubLevel::Json,
+                              vec![(Attr::Charset, Value::Utf8)]))
+                .set_mut(json::encode(&*log).unwrap())
+                .set_mut(status::Ok);
+
+            Ok(response)
+        } else {
+            Ok(Response::with((status::Forbidden,"Not an admin")))
+        }
+    } else {
+        Ok(Response::with((status::Forbidden,"Not logged in"))) // .. or admin account is not set
+    }
+}
+
 fn main() {
     let router = router!(index:     get "/" => index_n_search,
                          more:      get "/more" => more,
@@ -435,11 +506,14 @@ fn main() {
                          user_stat: get "/user_status" => user_status,
                          vote:      get "/vote_image" => vote_image,
                          about:     get "/about" => about,
+                         admin:     get "/admin" => admin,
+                         get_log:   get "/log"  => get_log,
 
                          show:      get "/show/:id" => show,
                          delete:    get "/delete/:id" => delete,
                          similiar:  get "/similiar" => similiar,
 
+                         adm_comm:  post "/admin" => admin_command,
                          login:     post "/login" => login,
                          upload_im: post "/upload_image" => upload_image,
                          adduser:   post "/adduser" => adduser);
@@ -451,8 +525,6 @@ fn main() {
 
     let mut chain = Chain::new(mount);
     chain.around(SessionStorage::new(SignedCookieBackend::new(time::now().to_timespec().sec.to_string().bytes().collect::<Vec<_>>())));
-
-    thread::spawn(commands::main);
 
     Iron::new(chain).http("localhost:3000").unwrap();
 }

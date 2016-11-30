@@ -6,16 +6,60 @@ use std::fmt::Display;
 use std::io::{Write,Read};
 use std::fs::{File,create_dir,read_dir};
 use std::path::Path;
+use std::sync::mpsc;
+use std::thread;
+use std::collections::HashMap;
+use std::sync::Mutex;
+use std::cell::RefCell;
 
 use super::{Table,Parser};
+use ::{LOG,CONFIG};
+use ::sync;
 
-use ::{OUTF,CONFIG};
 
-/// Write to `OUTPUT`
+lazy_static!{
+    static ref SENDERS : Mutex<RefCell<HashMap<u32, mpsc::Sender<()>>>> = Mutex::new(RefCell::new(HashMap::new()));
+    static ref ID : Mutex<RefCell<u32>> = Mutex::new(RefCell::new(0));
+}
+
+pub fn exec_command(input: &str) {
+    let senders = SENDERS.lock().unwrap();
+    let id = ID.lock().unwrap();
+    let mut senders = senders.borrow_mut();
+    let mut id = id.borrow_mut();
+
+    let input = input.trim();
+    if input.starts_with("sync") {
+        if let Some(func) = input.split_whitespace().collect::<Vec<_>>().get(1) {
+            let (sendr, recvr) = mpsc::channel::<()>();
+            senders.insert(*id, sendr);
+            match *func {
+                "derpy" => { thread::spawn(move || sync::derpy::main(&recvr)); },
+                "e621"  => { thread::spawn(move || sync::e621::main(&recvr)); },
+                "dan"   => { thread::spawn(move || sync::danbooru::main(&recvr)); }
+                "kona"  => { thread::spawn(move || sync::konachan::main(&recvr)); }
+                "gel"   => { thread::spawn(move || sync::gelbooru::main(&recvr)); }
+                _       => { log("Error: function not found") }
+            };
+            log(format!("ID: {}", *id));
+            *id += 1;
+        } else { log("Use sync <name>") }
+    } else if input.starts_with("kill") {
+        if let Some(input) = input.split_whitespace().collect::<Vec<_>>().get(1) {
+            if let Ok(id) = input.parse::<u32>() {
+                match senders.clone().get(&id) {
+                    Some(sender) => { let _ = sender.send(()); senders.remove(&id); log(format!("Killed {}", id)) },
+                    None => { log("Error: No such id") }
+                }
+            }
+        }
+    }
+}
+
+/// Log something
 pub fn log<T: Display>(s: T) {
-    let outf = OUTF.lock().unwrap();
-    let mut outf = outf.borrow_mut();
-    writeln!(outf, "{}", s).unwrap();
+    let log = LOG.lock().unwrap();
+    log.borrow_mut().push(format!("{}", s));
 }
 
 /// Save image & generate preview

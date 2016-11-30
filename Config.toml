@@ -1,4 +1,5 @@
 images-directory = "images"
+admin-username = "TyanNN"
 
 postgres-login = "easy"
 postgres-password = ""

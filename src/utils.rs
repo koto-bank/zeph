@@ -53,6 +53,10 @@ pub fn exec_command(input: &str) {
                 }
             }
         }
+    } else if input == "clear" {
+        let log = LOG.lock().unwrap();
+        let mut log = log.borrow_mut();
+        *log = Vec::new();
     }
 }
 

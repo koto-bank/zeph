@@ -140,7 +140,8 @@ impl Db {
                 Tag::From(ref f)            => Db::join_tags("got_from", f),
                 Tag::Uploader(ref u)        => Db::join_tags("uploader", u),
                 Tag::OrderBy(_,_)           => String::new(), // <- This one
-                Tag::Either(ref f, ref s)   => format!("(tags @> ARRAY['{}']) OR (tags @> ARRAY['{}'])", f, s)
+                Tag::Either(ref f, ref s)   => format!("(tags @> ARRAY['{}']) OR (tags @> ARRAY['{}'])", f, s),
+                Tag::Format(ref f)          => f.iter().map(|s| format!("name ILIKE '%.{}'", s)).collect::<Vec<_>>().join(" OR ")
             }
         }).filter(|x| !x.is_empty()).collect::<Vec<_>>().join(" AND ");
         let q = if !q.is_empty() { format!("WHERE {}", q) } else { String::new() };

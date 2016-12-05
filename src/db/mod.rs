@@ -56,7 +56,9 @@ enum Tag {
     /// Sorting
     OrderBy(OrderBy, AscDesc),
     // Either left or right with |
-    Either(String,String)
+    Either(String,String),
+    // File format
+    Format(Vec<String>),
 }
 
 /// `pub` is used to switch DBs, though only postgres works TODO: fix sqlite sometime
@@ -131,6 +133,7 @@ fn parse_tag(tag: &str) -> Tag {
                 "rating"    => Tag::Rating(values),
                 "from"      => Tag::From(values),
                 "uploader"  => Tag::Uploader(values),
+                "format"    => Tag::Format(values),
                 _           => Tag::Include(tag.to_string()) // Probably shouldn't be anything there?
             }
         },

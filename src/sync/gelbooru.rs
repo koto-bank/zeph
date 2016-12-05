@@ -11,7 +11,7 @@ use std::sync::mpsc::Receiver;
 
 pub fn main(rc: &Receiver<()>) {
     let client = Client::new();
-    let mut url_string = "http://gelbooru.com//index.php?page=dapi&s=post&q=index&json=1".to_string();
+    let mut url_string = "http://gelbooru.com/index.php?page=dapi&s=post&q=index&json=1".to_string();
     let mut page = 1;
 
     loop {

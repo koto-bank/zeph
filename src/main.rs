@@ -467,6 +467,10 @@ fn about(_: &mut Request) -> IronResult<Response> {
                     td code "1girl | 2girls"
                     td "Search for images of girl on her own OR 2 girls"
                 }
+                tr {
+                    td code "1girl format:jpg,gif"
+                    td "Search for GIF and JPEG images"
+                }
             }
         }
     };

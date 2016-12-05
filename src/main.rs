@@ -108,7 +108,7 @@ fn index_n_search(_req: &mut Request) -> IronResult<Response> {
                     input#tag-search-field placeholder="Search" name="q" type="text" /
                 }
                 div#tags {} // Tags w/ JS
-                a href="/about" style="opacity: 0.5;" "About Zeph"
+                a href="/about" style="opacity: 0.5;" "About Zeph & Help"
             }
             div#images {} // Pics w/ JS
             button#upload-button onclick="showUploadOrLogin()" "Login"
@@ -189,7 +189,7 @@ fn show(req: &mut Request) -> IronResult<Response> {
                         }
                     }
                 }
-                a href="/about" style="opacity: 0.5;" "About Zeph"
+                a href="/about" style="opacity: 0.5;" "About Zeph & Help"
             }
             div style="margin-left: 15%;" {
                 a href={ "/images/" (image.name) } {
@@ -423,6 +423,50 @@ fn about(_: &mut Request) -> IronResult<Response> {
             br /
             @if let Some(addr) = CONFIG.get("contact-email") {
                 { "Contact e-mail adress: " a href={"mailto:" ( addr.as_str().unwrap()) } ( addr.as_str().unwrap() ) }
+            }
+            br
+            h3 "Search options"
+            table style="width: 50%;" {
+                tr {
+                    th "Example"
+                    th "Meaning"
+                }
+                tr {
+                    td code "1girl"
+                    td "Search for a girl on her own"
+                }
+                tr {
+                    td code "1girl -fur"
+                    td "Search for a non-fluffy girl (exclude 'fur' tag)"
+                }
+                tr {
+                    td code "rating:s,q"
+                    td "Search for a safe and questionable images"
+                }
+                tr {
+                    td {
+                        code "*girls"
+                        "or"
+                        code "2girl*"
+                    }
+                    td "Search for anything that ends with 'girls' (or starts with '2girl')"
+                }
+                tr {
+                    td code "from:konachan"
+                    td "Search for images synchronized from konachan (full list in source code & easily extendable)"
+                }
+                tr {
+                    td code "uploader:random_dude"
+                    td "Images uploaded by random_dude, note that 'sync' are synchronized images"
+                }
+                tr {
+                    td code "sort:asc:score"
+                    td "Sort images by score from worst to best (ascending); desc is for descening"
+                }
+                tr {
+                    td code "1girl | 2girls"
+                    td "Search for images of girl on her own OR 2 girls"
+                }
             }
         }
     };

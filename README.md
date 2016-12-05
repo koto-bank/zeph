@@ -9,7 +9,7 @@ Also, some Postgres modules are required: `citext`, `smlar` and `hstore`.
 
 * Synchronization with some other booru's (e.g. Gelbooru, Konachan) in `src/db`
     * Syncing is controlled with console in `/admin`
-* Search with tags, partial tags, uploader, etc. (optionally synced booru's with `from:booru_name`) <!-- TODO: probably document it? -->
+* Search with tags, partial tags, uploader, etc (more info on `/about` page)
 * Sort images by ascending/descending of score/id (e.g. `sort:asc:score`)
 * HTTP API (it is there, but not well documented) <!-- TODO: document it.. -->
 * (Kind of) configurable

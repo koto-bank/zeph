@@ -54,7 +54,9 @@ enum Tag {
     /// Uploader search
     Uploader(Vec<String>),
     /// Sorting
-    OrderBy(OrderBy, AscDesc)
+    OrderBy(OrderBy, AscDesc),
+    // Either left or right with |
+    Either(String,String)
 }
 
 /// `pub` is used to switch DBs, though only postgres works TODO: fix sqlite sometime
@@ -66,6 +68,42 @@ pub use self::sqlite::Db;
 
 #[cfg(feature = "postgresql")]
 pub use self::postgres::Db;
+
+
+/// Parse tags w/ '|' FIXME its kinda bad?
+fn parse_tags(tags: &[String]) -> Vec<Tag> {
+    let mut result = Vec::new();
+
+    for (index,t) in tags.iter().enumerate() {
+        match t.as_str() {
+            "|" => {
+                if let Some(second) = tags.get(index+1) {
+                    if index != 0 {
+                        if let Some(first) = tags.get(index-1) {
+                            result.push(Tag::Either(first.to_string(),second.to_string()))
+                        }
+                    }
+                }
+            },
+
+            _ => {
+                let next = tags.get(index+1);
+                if next.is_none() || next.map(|x| *x == "|") == Some(false) {
+                    if index != 0 {
+                        let prev = tags.get(index-1);
+                        if prev.is_none() || prev.map(|x| *x == "|") == Some(false) {
+                          result.push(parse_tag(t))
+                        }
+                    } else {
+                        result.push(parse_tag(t))
+                    }
+                }
+            }
+        }
+    }
+
+    result
+}
 
 /// Tag parsing
 fn parse_tag(tag: &str) -> Tag {

@@ -13,7 +13,7 @@ use self::postgres::rows::Row;
 
 pub struct Db(Connection);
 
-use super::{Image,Tag,AnyWith,ImageBuilder,VoteImageError,parse_tag};
+use super::{Image,Tag,AnyWith,ImageBuilder,VoteImageError,parse_tags};
 use super::super::CONFIG;
 
 impl Default for Db { // Damn clippy
@@ -114,7 +114,7 @@ impl Db {
 
     /// Search images by tags
     pub fn by_tags<T: Into<Option<i32>>>(&self, take: T, skip: usize, tags: &[String]) -> SQLResult<Vec<Image>> {
-        let tags = tags.iter().map(|x| parse_tag(x)).collect::<Vec<_>>();
+        let tags = parse_tags(tags);
         let order = tags.iter().filter_map(|x| {
             match *x {
                 Tag::OrderBy(ref by, ref ascdesc) => {
@@ -130,16 +130,17 @@ impl Db {
 
         let q = tags.iter().map(|t| { // TODO: do something with OrderBy
             match *t {
-                Tag::Include(ref incl)  => format!(r"tags @> ARRAY['{}']", incl),
-                Tag::Exclude(ref excl)  => format!(r"NOT tags @> ARRAY['{}']", excl),
-                Tag::AnyWith(ref x)     => match *x {
-                    AnyWith::Before(ref bef) => format!(r"(SELECT bool_or(tag ~ '^{}') FROM unnest(tags) t (tag))", bef),
-                    AnyWith::After(ref aft) => format!(r"(SELECT bool_or(tag ~ '{}$') FROM unnest(tags) t (tag))", aft),
+                Tag::Include(ref incl)      => format!("tags @> ARRAY['{}']", incl),
+                Tag::Exclude(ref excl)      => format!("NOT tags @> ARRAY['{}']", excl),
+                Tag::AnyWith(ref x)         => match *x {
+                    AnyWith::Before(ref bef) => format!("(SELECT bool_or(tag ~ '^{}') FROM unnest(tags) t (tag))", bef),
+                    AnyWith::After(ref aft) => format!("(SELECT bool_or(tag ~ '{}$') FROM unnest(tags) t (tag))", aft),
                 },
-                Tag::Rating(ref r)      => Db::join_tags("rating", r),
-                Tag::From(ref f)        => Db::join_tags("got_from", f),
-                Tag::Uploader(ref u)    => Db::join_tags("uploader", u),
-                Tag::OrderBy(_,_)       => String::new() // <- This one
+                Tag::Rating(ref r)          => Db::join_tags("rating", r),
+                Tag::From(ref f)            => Db::join_tags("got_from", f),
+                Tag::Uploader(ref u)        => Db::join_tags("uploader", u),
+                Tag::OrderBy(_,_)           => String::new(), // <- This one
+                Tag::Either(ref f, ref s)   => format!("(tags @> ARRAY['{}']) OR (tags @> ARRAY['{}'])", f, s)
             }
         }).filter(|x| !x.is_empty()).collect::<Vec<_>>().join(" AND ");
         let q = if !q.is_empty() { format!("WHERE {}", q) } else { String::new() };

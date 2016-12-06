@@ -35,7 +35,6 @@ use std::path::Path;
 use std::fs::{File,remove_file};
 use std::io::Read;
 use std::sync::Mutex;
-use std::cell::RefCell;
 
 use rustc_serialize::json;
 
@@ -73,7 +72,7 @@ lazy_static! {
     pub static ref DB : Mutex<Db> = Mutex::new(Db::new());
     pub static ref CONFIG : Table = open_config();
     /// Used in utils
-    pub static ref LOG : Mutex<RefCell<Vec<String>>> = Mutex::new(RefCell::new(Vec::new()));
+    pub static ref LOG : Mutex<Vec<String>> = Mutex::new(Vec::new());
 }
 
 struct Login(String);
@@ -502,12 +501,11 @@ fn admin_command(req: &mut Request) -> IronResult<Response> {
 fn admin(req: &mut Request) -> IronResult<Response> {
     if let (Some(curr_username), Some(admin_username)) = (req.session().get::<Login>()?,config!(? "admin-username")) {
         if curr_username.0.to_lowercase() == admin_username.to_lowercase() {
-            let log = LOG.lock().unwrap();
             let page = html!{
                 script src="/assets/js/admin.js" {}
 
                 div#log-block style="width:40%; height:50%; overflow-y: auto; border: 1px solid black;" {
-                    @for l in log.borrow().iter() {
+                    @for l in LOG.lock().unwrap().iter() {
                         (l)
                     }
                 }
@@ -529,13 +527,11 @@ fn admin(req: &mut Request) -> IronResult<Response> {
 fn get_log(req: &mut Request) -> IronResult<Response> {
     if let (Some(curr_username), Some(admin_username)) = (req.session().get::<Login>()?,config!(? "admin-username")) {
         if curr_username.0.to_lowercase() == admin_username.to_lowercase() {
-            let log = LOG.lock().unwrap();
-            let log = log.borrow();
             let mut response = Response::new();
             response
                 .set_mut(Mime(TopLevel::Application, SubLevel::Json,
                               vec![(Attr::Charset, Value::Utf8)]))
-                .set_mut(json::encode(&*log).unwrap())
+                .set_mut(json::encode(&*LOG.lock().unwrap()).unwrap())
                 .set_mut(status::Ok);
 
             Ok(response)

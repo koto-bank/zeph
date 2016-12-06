@@ -10,7 +10,6 @@ use std::sync::mpsc;
 use std::thread;
 use std::collections::HashMap;
 use std::sync::Mutex;
-use std::cell::RefCell;
 
 use super::{Table,Parser};
 use ::{LOG,CONFIG};
@@ -18,15 +17,13 @@ use ::sync;
 
 
 lazy_static!{
-    static ref SENDERS : Mutex<RefCell<HashMap<u32, mpsc::Sender<()>>>> = Mutex::new(RefCell::new(HashMap::new()));
-    static ref ID : Mutex<RefCell<u32>> = Mutex::new(RefCell::new(0));
+    static ref SENDERS : Mutex<HashMap<u32, mpsc::Sender<()>>> = Mutex::new(HashMap::new());
+    static ref ID : Mutex<u32> = Mutex::new(0);
 }
 
 pub fn exec_command(input: &str) {
-    let senders = SENDERS.lock().unwrap();
-    let id = ID.lock().unwrap();
-    let mut senders = senders.borrow_mut();
-    let mut id = id.borrow_mut();
+    let mut senders = SENDERS.lock().unwrap();
+    let mut id = ID.lock().unwrap();
 
     let input = input.trim();
     if input.starts_with("sync") {
@@ -54,16 +51,13 @@ pub fn exec_command(input: &str) {
             }
         }
     } else if input == "clear" {
-        let log = LOG.lock().unwrap();
-        let mut log = log.borrow_mut();
-        *log = Vec::new();
+        *LOG.lock().unwrap() = Vec::new();
     }
 }
 
 /// Log something
 pub fn log<T: Display>(s: T) {
-    let log = LOG.lock().unwrap();
-    log.borrow_mut().push(format!("{}", s));
+    LOG.lock().unwrap().push(format!("{}", s));
 }
 
 /// Save image & generate preview

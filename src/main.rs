@@ -574,5 +574,5 @@ fn main() {
     let mut chain = Chain::new(mount);
     chain.around(SessionStorage::new(SignedCookieBackend::new(time::now().to_timespec().sec.to_string().bytes().collect::<Vec<_>>())));
 
-    Iron::new(chain).http("localhost:3000").unwrap();
+    Iron::new(chain).http("127.0.0.1:3000").unwrap();
 }

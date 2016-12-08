@@ -278,39 +278,44 @@ fn login(req: &mut Request) -> IronResult<Response> {
 }
 
 fn upload_image(req: &mut Request) -> IronResult<Response> {
-    if let Some(username) = req.session().get::<Login>()? {
-        let username = username.0;
-        if let Ok(mut multipart) = Multipart::from_request(req) {
-            match multipart.save_all() {
-                SaveResult::Full(entries) | SaveResult::Partial(entries, _)  => {
-                    if let Some(savedfile) = entries.files.get("image") {
-                        if let Some(ref filename) = savedfile.filename {
-                            if let Some(tags) = entries.fields.get("tags") {
-                                let tags = tags.split_whitespace().map(String::from).collect::<Vec<_>>();
-                                let mut body = Vec::new();
-                                let _ = File::open(&savedfile.path).unwrap().read_to_end(&mut body);
-                                let name = DB.lock().unwrap().add_with_tags_name(&tags, filename.split('.').collect::<Vec<_>>()[1], &username).unwrap();
+    let username = match req.session().get::<Login>()? {
+        Some(u) => u.0,
+        None    => return Ok(Response::with((status::Forbidden,"Not logged in")))
+    };
+    let mut multipart = match Multipart::from_request(req) {
+        Ok(m)   => m,
+        Err(e)  => return Ok(Response::with((status::BadRequest, format!("Not a multipart request? {:#?}", e))))
+    };
 
-                                save_image(Path::new(config!("images-directory")), &name, &body);
+    match multipart.save_all() {
+        SaveResult::Full(entries) | SaveResult::Partial(entries, _)  => {
+            let savedfile = match entries.files.get("image") {
+                Some(s) => s,
+                None    => return Ok(Response::with((status::BadRequest,"Can't load file")))
+            };
+            let filename = match savedfile.filename {
+                Some(ref f) => f,
+                None    => return Ok(Response::with((status::BadRequest,"No filename"))) // Is this even possible?
+            };
+            let tags = match entries.fields.get("tags") {
+                Some(t) => t.split_whitespace().map(String::from).collect::<Vec<_>>(),
+                None    => return Ok(Response::with((status::BadRequest,"No tags found")))
+            };
 
-                                let mut response = Response::new();
-                                response
-                                    .set_mut(Redirect("/".to_string()))
-                                    .set_mut(status::Found);
-                                Ok(response)
+            let mut body = Vec::new();
+            let _ = File::open(&savedfile.path).unwrap().read_to_end(&mut body);
+            let name = DB.lock().unwrap().add_with_tags_name(&tags, filename.split('.').collect::<Vec<_>>()[1], &username).unwrap();
 
-                            } else { Ok(Response::with((status::BadRequest,"No tags found"))) }
-                        } else { Ok(Response::with((status::BadRequest,"No filename"))) }
-                    } else { Ok(Response::with((status::BadRequest,"Can't load file"))) }
-                },
+            save_image(Path::new(config!("images-directory")), &name, &body);
 
-                SaveResult::Error(e) =>  Ok(Response::with((status::BadRequest,format!("Server could not handle multipart POST! {:?}", e))))
-            }
-        } else {
-            Ok(Response::with((status::BadRequest,"Not a multipart request?")))
-        }
-    } else {
-        Ok(Response::with((status::Forbidden,"Not logged in")))
+            let mut response = Response::new();
+            response
+                .set_mut(Redirect("/".to_string()))
+                .set_mut(status::Found);
+            Ok(response)
+        },
+
+        SaveResult::Error(e) =>  Ok(Response::with((status::BadRequest,format!("Server could not handle multipart POST! {:?}", e))))
     }
 }
 
@@ -322,22 +327,23 @@ fn adduser(req: &mut Request) -> IronResult<Response> {
     };
 
     Ok(if let (Some(login), Some(pass), Some(confirm_pass)) = (body.get("login"), body.get("password"),body.get("confirm_password")) {
-        let (login,pass,confirm_pass) = (login[0].clone(), pass[0].clone(), confirm_pass[0].clone());
+        let (login,pass,confirm_pass) = (&login[0], &pass[0], &confirm_pass[0]);
         if pass == confirm_pass {
             if !pass.trim().is_empty() && !login.trim().is_empty() {
-                if let Ok(res) = DB.lock().unwrap().add_user(&login,&pass) {
-                    if res {
-                        let mut response = Response::new();
-                        req.session().set(Login(login))?;
-                        response
-                            .set_mut(Redirect("/".to_string()))
-                            .set_mut(status::Found);
-                        response
-                    } else {
-                        Response::with((status::Ok,"User already exists"))
-                    }
-                } else {
-                    Response::with((status::InternalServerError, "Internal server error"))
+                match DB.lock().unwrap().add_user(&login,&pass) {
+                    Ok(res)   => {
+                        if res {
+                            let mut response = Response::new();
+                            req.session().set(Login(login.clone()))?;
+                            response
+                                .set_mut(Redirect("/".to_string()))
+                                .set_mut(status::Found);
+                            response
+                        } else {
+                            Response::with((status::Ok,"User already exists"))
+                        }
+                    },
+                    Err(e)  => Response::with((status::InternalServerError, format!("Internal server error: {}", e)))
                 }
             } else {
                 Response::with((status::BadRequest,"Empty login/pass"))

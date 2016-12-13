@@ -1,15 +1,13 @@
-extern crate hyper;
-
-use self::hyper::client::Client;
-use self::hyper::header::UserAgent;
-
-use ::utils::*;
+use hyper::client::Client;
+use hyper::header::UserAgent;
+use hyper::Error as HyperError;
 
 use std::io::Read;
 use std::path::Path;
 
-pub use super::{DB,CONFIG};
-use super::db::ImageBuilder;
+use {DB,CONFIG};
+use db::ImageBuilder;
+use utils::*;
 
 use rustc_serialize::json::Json;
 
@@ -84,7 +82,7 @@ fn process_downloads(client: &Client, images: &[Image], recv: &Receiver<()>) -> 
 }
 
 /// Download image and add it to DB
-fn download(client: &Client, im: &Image) -> Result<(), hyper::Error> {
+fn download(client: &Client, im: &Image) -> Result<(), HyperError> {
     let mut res = client.get(&im.url)
         .header(UserAgent("Zeph/1.0".to_owned()))
         .send()?;
@@ -106,7 +104,7 @@ fn download(client: &Client, im: &Image) -> Result<(), hyper::Error> {
 }
 
 /// Get and parse JSON
-fn req_and_parse(client: &Client, url: &str) -> Result<Json, hyper::Error> {
+fn req_and_parse(client: &Client, url: &str) -> Result<Json, HyperError> {
     let mut res = match client.get(url)
         .header(UserAgent("Zeph/1.0".to_owned()))
         .send() {

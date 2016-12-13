@@ -14,7 +14,7 @@ use self::postgres::rows::Row;
 pub struct Db(Connection);
 
 use super::{Image,Tag,AnyWith,ImageBuilder,VoteImageError,parse_tags};
-use super::super::CONFIG;
+use CONFIG;
 
 impl Default for Db { // Damn clippy
     fn default() -> Self {

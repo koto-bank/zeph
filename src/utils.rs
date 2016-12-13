@@ -11,10 +11,7 @@ use std::thread;
 use std::collections::HashMap;
 use std::sync::Mutex;
 
-use super::{Table,Parser};
-use ::{LOG,CONFIG};
-use ::sync;
-
+use {LOG,CONFIG,sync,Table,Parser};
 
 lazy_static!{
     static ref SENDERS : Mutex<HashMap<u32, mpsc::Sender<()>>> = Mutex::new(HashMap::new());

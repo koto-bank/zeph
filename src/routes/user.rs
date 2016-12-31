@@ -44,15 +44,14 @@ pub fn login(req: &mut Request) -> IronResult<Response> {
 
     if let (Some(login), Some(pass)) = (body.get("login"),body.get("password")) {
         match DB.lock().unwrap().check_user(&login[0], &pass[0]).unwrap() {
-            Some(x) => if x {
+            Some(x) if x => {
                 req.session().set(Login(login[0].clone()))?;
                 response
                     .set_mut(Redirect("/".to_string()))
                     .set_mut(status::Found);
                 Ok(response)
-            } else {
-                Ok(Response::with((status::BadRequest,"Incorrect login/pass")))
             },
+            Some(_) => Ok(Response::with((status::BadRequest,"Incorrect login/pass"))),
             None  => Ok(Response::with((status::Ok,"No such user")))
         }
     } else {
@@ -71,7 +70,7 @@ pub fn adduser(req: &mut Request) -> IronResult<Response> {
         let (login,pass,confirm_pass) = (&login[0], &pass[0], &confirm_pass[0]);
         if pass == confirm_pass {
             if !pass.trim().is_empty() && !login.trim().is_empty() {
-                match DB.lock().unwrap().add_user(&login,&pass) {
+                match DB.lock().unwrap().add_user(login,pass) {
                     Ok(res)   => {
                         if res {
                             let mut response = Response::new();

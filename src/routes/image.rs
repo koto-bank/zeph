@@ -96,7 +96,7 @@ pub fn delete(req: &mut Request) -> IronResult<Response> {
     };
 
     Ok(match req.session().get::<Login>()? {
-        Some(username) => if Some(username.0) == image.uploader {
+        Some(ref username) if Some(&username.0) == image.uploader.as_ref() => {
             let name = DB.lock().unwrap().delete_image(id).unwrap();
             remove_file(format!("{}/{}", config!("images-directory"), name)).unwrap();
             remove_file(format!("{}/preview/{}", config!("images-directory"), name)).unwrap();
@@ -104,7 +104,8 @@ pub fn delete(req: &mut Request) -> IronResult<Response> {
                 .set_mut(Redirect("/".to_string()))
                 .set_mut(status::Found);
             response
-        } else {
+        },
+        Some(_) => {
             Response::with((status::Forbidden,"You are not an uploader of this picture"))
         },
         None    => Response::with((status::Forbidden,"Not logged in"))

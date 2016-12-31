@@ -1,4 +1,4 @@
-#[derive(Debug,Clone,RustcEncodable)]
+#[derive(Debug,Clone,Serialize)]
 pub struct Image {
     pub id: i32,
     pub name: String,

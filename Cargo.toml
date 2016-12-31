@@ -16,7 +16,10 @@ iron-sessionstorage = "0.3.0"
 maud = {version = "*", features = [ "iron" ] }
 maud_macros = "*"
 
-rustc-serialize = "*"
+serde = "*"
+serde_json = "*"
+serde_derive = "*"
+
 hyper = "*"
 image = "*"
 lazy_static = "*"

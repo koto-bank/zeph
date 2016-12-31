@@ -1,6 +1,6 @@
 //! Routes that help to work w/ users
 
-use {DB,json};
+use DB;
 
 use iron::prelude::*;
 use iron::status;
@@ -10,10 +10,12 @@ use iron::mime::{Mime, TopLevel, SubLevel, Attr, Value};
 use urlencoded::UrlEncodedBody;
 use session::SessionRequestExt;
 
+use serde_json::to_value;
+
 use Login;
 
 pub fn user_status(req: &mut Request) -> IronResult<Response> {
-    #[derive(RustcEncodable)]
+    #[derive(Serialize)]
     struct UserStatus {
         logined: bool,
         name: Option<String>
@@ -29,7 +31,7 @@ pub fn user_status(req: &mut Request) -> IronResult<Response> {
     response
         .set_mut(Mime(TopLevel::Application, SubLevel::Json,
                       vec![(Attr::Charset, Value::Utf8)]))
-        .set_mut(json::encode(&UserStatus{logined: logined,name: name}).unwrap())
+        .set_mut(to_value(&UserStatus{logined: logined,name: name}).to_string())
         .set_mut(status::Ok);
     Ok(response)
 }

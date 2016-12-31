@@ -1,6 +1,6 @@
 //! Routes to work with individual image (and `/show` page)
 
-use {DB,CONFIG,save_image,json,VoteImageError};
+use {DB,CONFIG,save_image,VoteImageError};
 
 use std::fs::{File,remove_file};
 use std::io::Read;
@@ -17,6 +17,8 @@ use router::Router;
 use session::SessionRequestExt;
 
 use multipart::server::{Multipart, SaveResult};
+
+use serde_json::to_value;
 
 use Login;
 
@@ -198,7 +200,7 @@ pub fn similiar(req: &mut Request) -> IronResult<Response> {
     response
         .set_mut(Mime(TopLevel::Application, SubLevel::Json,
                       vec![(Attr::Charset, Value::Utf8)]))
-        .set_mut(json::encode(&images).unwrap())
+        .set_mut(to_value(&images).to_string())
         .set_mut(status::Ok);
     Ok(response)
 }

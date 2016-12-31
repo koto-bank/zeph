@@ -33,12 +33,12 @@ pub fn main(rc: &Receiver<()>) {
 
         let images = images.iter().fold(Vec::new(), |mut acc, x| {
             let image = x.as_object().unwrap();
-            let tags = image["tags"].as_string().unwrap().split_whitespace().map(String::from).collect::<Vec<_>>();
-            let rating = image["rating"].as_string().unwrap().chars().nth(0).unwrap();
+            let tags = image["tags"].as_str().unwrap().split_whitespace().map(String::from).collect::<Vec<_>>();
+            let rating = image["rating"].as_str().unwrap().chars().nth(0).unwrap();
 
-            let ext = image["file_ext"].as_string().unwrap();
+            let ext = image["file_ext"].as_str().unwrap();
             if ext != "webm" && ext != "swf" && ext != "mp4" {
-                let url = image["file_url"].as_string().unwrap().to_string();
+                let url = image["file_url"].as_str().unwrap().to_string();
                 let id = image["id"].as_i64().unwrap();
                 let name = format!("e621_{}.{}", id, ext);
                 let score = image["score"].as_i64().unwrap();

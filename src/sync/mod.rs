@@ -4,14 +4,15 @@ use hyper::Error as HyperError;
 
 use std::io::Read;
 use std::path::Path;
+use std::str::FromStr;
 
 use {DB,CONFIG};
 use db::ImageBuilder;
 use utils::*;
 
-use rustc_serialize::json::Json;
-
 use std::sync::mpsc::{Receiver,TryRecvError};
+
+use serde_json::Value;
 
 #[derive(Debug)]
 pub struct Image {
@@ -104,7 +105,7 @@ fn download(client: &Client, im: &Image) -> Result<(), HyperError> {
 }
 
 /// Get and parse JSON
-fn req_and_parse(client: &Client, url: &str) -> Result<Json, HyperError> {
+fn req_and_parse(client: &Client, url: &str) -> Result<Value, HyperError> {
     let mut res = match client.get(url)
         .header(UserAgent("Zeph/1.0".to_owned()))
         .send() {
@@ -118,5 +119,5 @@ fn req_and_parse(client: &Client, url: &str) -> Result<Json, HyperError> {
     let mut body = String::new();
     res.read_to_string(&mut body).unwrap();
 
-    Ok(Json::from_str(&body).unwrap())
+    Ok(Value::from_str(&body).unwrap())
 }

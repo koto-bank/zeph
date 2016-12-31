@@ -8,7 +8,7 @@ use iron::mime::{Mime, TopLevel, SubLevel, Attr, Value};
 
 use urlencoded::UrlEncodedQuery;
 
-use rustc_serialize::json;
+use serde_json::to_value;
 
 pub mod image;
 pub mod user;
@@ -66,7 +66,7 @@ pub fn more(req: &mut Request) -> IronResult<Response> {
     response
         .set_mut(Mime(TopLevel::Application, SubLevel::Json,
                       vec![(Attr::Charset, Value::Utf8)]))
-        .set_mut(json::encode(&images).unwrap())
+        .set_mut(to_value(&images).to_string())
         .set_mut(status::Ok);
     Ok(response)
 }

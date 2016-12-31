@@ -1,11 +1,15 @@
-#![feature(plugin)]
+#![feature(plugin,proc_macro)]
 #![plugin(maud_macros)]
 
 #[macro_use] extern crate router;
 #[macro_use] extern crate lazy_static;
 
+#[macro_use] extern crate serde_derive;
+
 extern crate maud;
-extern crate rustc_serialize;
+
+extern crate serde_json;
+
 extern crate hyper;
 extern crate time;
 extern crate multipart;
@@ -26,8 +30,6 @@ use session::backends::SignedCookieBackend;
 
 use std::path::Path;
 use std::sync::Mutex;
-
-use rustc_serialize::json;
 
 pub use toml::{Table,Parser};
 

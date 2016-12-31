@@ -30,7 +30,7 @@ pub fn main(rc: &Receiver<()>) {
             let image = x.as_object().unwrap();
             let mut rating = String::new();
 
-            let tags = image["tags"].as_string().unwrap().split(',').map(|x| x.trim().replace(" ", "_")).filter_map(|x| {
+            let tags = image["tags"].as_str().unwrap().split(',').map(|x| x.trim().replace(" ", "_")).filter_map(|x| {
                 if x.starts_with("artist:") {
                     Some(x.split(':').collect::<Vec<_>>()[1].to_string())
                 } else if x == "safe" || x == "semi-grimdark" {
@@ -46,10 +46,10 @@ pub fn main(rc: &Receiver<()>) {
                     Some(x.to_string())
                 }}).collect::<Vec<_>>();
             let rating = rating.chars().collect::<Vec<_>>()[0];
-            let url = format!("https:{}", image["image"].as_string().unwrap());
-            let id = image["id"].as_string().unwrap().parse::<u64>().unwrap();
+            let url = format!("https:{}", image["image"].as_str().unwrap());
+            let id = image["id"].as_str().unwrap().parse::<u64>().unwrap();
 
-            let ext = image["file_name"].as_string().unwrap().split('.').collect::<Vec<_>>();
+            let ext = image["file_name"].as_str().unwrap().split('.').collect::<Vec<_>>();
             let ext = ext.last().unwrap();
             let name = format!("derpibooru_{}.{}", id, ext);
             let score = image["score"].as_i64().unwrap();

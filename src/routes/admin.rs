@@ -1,6 +1,6 @@
 //! All the admin panel stuff
 
-use {LOG,CONFIG,json,exec_command};
+use {LOG,CONFIG,exec_command};
 
 use iron::prelude::*;
 use iron::status;
@@ -8,6 +8,8 @@ use iron::mime::{Mime, TopLevel, SubLevel, Attr, Value};
 
 use urlencoded::UrlEncodedBody;
 use session::SessionRequestExt;
+
+use serde_json::to_value;
 
 use Login;
 
@@ -65,7 +67,7 @@ pub fn get_log(req: &mut Request) -> IronResult<Response> {
             response
                 .set_mut(Mime(TopLevel::Application, SubLevel::Json,
                               vec![(Attr::Charset, Value::Utf8)]))
-                .set_mut(json::encode(&*LOG.lock().unwrap()).unwrap())
+                .set_mut(to_value(&*LOG.lock().unwrap()).to_string())
                 .set_mut(status::Ok);
 
             Ok(response)
